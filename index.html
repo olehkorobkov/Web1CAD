@@ -8,11 +8,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Web1CAD</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web1CAD – Free Online CAD Software</title>
+
+    <!-- SEO -->
+    <meta name="description" content="Web1CAD is a fast, lightweight and free browser-based CAD tool for 2D drawing. No installation needed. Compatible with DWG-like files. Ideal for architects, engineers and designers.">
+    <meta name="keywords" content="CAD, online CAD, DWG, DXF, Web1CAD, browser CAD, AutoCAD alternative, 2D drafting, free CAD software, architectural drawing, engineering design">
     <meta name="author" content="Oleh Korobkov">
+    <meta name="robots" content="index, follow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="copyright" content="© 2025 Oleh Korobkov. All rights reserved.">
+
+    <!-- Social Media Preview -->
+    <meta property="og:title" content="Web1CAD – Free Online CAD Software">
+    <meta property="og:description" content="Draw and edit CAD projects right in your browser. Web1CAD is a fast and intuitive 2D drafting tool with layers, line types, and object snapping.">
+    <meta property="og:url" content="https://web1cad.xyz/">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://web1cad.xyz/preview.jpg">
+
+    <!-- Icons -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* CAD-style cross cursor */
+        #cadCanvas {
+            cursor: url('crosshair.cur'), crosshair;
+        }
+    </style>
 </head>
 <body>
 <div class="cad-container">
@@ -285,4 +308,3 @@ document.addEventListener('dragstart', e => e.preventDefault());
 </script>
 </body>
 </html>
-
