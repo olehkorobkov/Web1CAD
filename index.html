@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<!--
+    Web1CAD Preview Page - Professional 2D CAD System
+    Developed by Oleh Korobkov
+    © 2025 Oleh Korobkov. All rights reserved.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web1CAD - Professional 2D CAD System | Beta Version 25.07.31</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags for Google Search -->
+    <meta name="description" content="Web1CAD - Professional browser-based 2D CAD system with advanced drawing tools, layer management, and real-time collaboration. Beta version with ongoing development.">
+    <meta name="keywords" content="CAD software, 2D CAD, web CAD, browser CAD, technical drawing, AutoCAD alternative, online CAD, engineering drawing, architectural drawing">
+    <meta name="author" content="Oleh Korobkov">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    
+    <!-- Open Graph Meta Tags for Social Media -->
+    <meta property="og:title" content="Web1CAD - Professional 2D CAD System">
+    <meta property="og:description" content="Advanced browser-based CAD software for professional technical drawing and design. Features include multi-layer support, precision tools, and real-time collaboration.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:site_name" content="Web1CAD">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Web1CAD - Professional 2D CAD System">
+    <meta name="twitter:description" content="Browser-based CAD software with advanced drawing tools and professional features.">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            color: #e0e0e0;
+            background: #1a1a1a;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #e0e0e0;
+        }
+        
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #66bb6a;
+            text-shadow: 0 0 10px rgba(102, 187, 106, 0.3);
+        }
+        
+        .header .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            color: #e0e0e0;
+        }
+        
+        .beta-notice {
+            background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
+            color: #81c784;
+            border: 1px solid #666;
+            padding: 1rem 2rem;
+            border-radius: 3px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        
+        .main-content {
+            background: linear-gradient(180deg, #3a3a3a 0%, #2e2e2e 100%);
+            border: 2px solid #555;
+            border-radius: 3px;
+            padding: 3rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            margin-bottom: 2rem;
+        }
+        
+        .description {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            color: #e0e0e0;
+            text-align: center;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature {
+            background: linear-gradient(180deg, #424242 0%, #383838 100%);
+            border: 1px solid #666;
+            padding: 2rem;
+            border-radius: 3px;
+            border-left: 4px solid #66bb6a;
+        }
+        
+        .feature h3 {
+            color: #81c784;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .feature ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature li {
+            padding: 0.5rem 0;
+            color: #e0e0e0;
+        }
+        
+        .feature li:before {
+            content: "✓ ";
+            color: #66bb6a;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin-top: 3rem;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(180deg, #5a5a5a 0%, #4a4a4a 100%);
+            color: #81c784;
+            border: 1px solid #666;
+            padding: 1rem 3rem;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .cta-button:hover {
+            background: linear-gradient(180deg, #6a6a6a 0%, #5a5a5a 100%);
+            border-color: #888;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            text-shadow: 0 0 5px rgba(102, 187, 106, 0.5);
+        }
+        
+        .footer {
+            text-align: center;
+            color: #999;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .warning-list {
+            background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
+            border: 1px solid #777;
+            border-radius: 3px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .warning-list h4 {
+            color: #ffb74d;
+            margin-bottom: 1rem;
+        }
+        
+        .warning-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .warning-list li {
+            padding: 0.3rem 0;
+            color: #e0e0e0;
+        }
+        
+        .warning-list li:before {
+            content: "⚠️ ";
+            margin-right: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .main-content {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Web1CAD <span style="font-size: 0.6em; color: #999;">v25.07.31</span></h1>
+            <div class="subtitle">Professional 2D CAD System</div>
+        </header>
+        
+        <div class="beta-notice">
+            🚧 BETA VERSION - Some features are currently under development
+        </div>
+        
+        <main class="main-content">
+            <div class="description">
+                <strong>Web1CAD</strong> is a browser-based 2D Computer-Aided Design (CAD) system designed for basic technical drawing and design tasks. This beta version provides essential drawing tools and features for simple CAD projects.
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature">
+                    <h3>🎨 Drawing Tools</h3>
+                    <ul>
+                        <li>Lines, polylines, and smooth splines</li>
+                        <li>Circles, ellipses, and arcs</li>
+                        <li>Rectangles and regular polygons</li>
+                        <li>Text annotations and points</li>
+                        <li>Basic hatch patterns</li>
+                    </ul>
+                </div>
+                
+                <div class="feature">
+                    <h3>🗂️ Professional Features</h3>
+                    <ul>
+                        <li>Multi-layer management system</li>
+                        <li>Zoom and pan navigation</li>
+                        <li>Grid display and snap modes</li>
+                        <li>Undo/redo operations</li>
+                        <li>Object selection and editing</li>
+                    </ul>
+                </div>
+                
+                <div class="feature">
+                    <h3>⚡ Modern Technology</h3>
+                    <ul>
+                        <li>HTML5 Canvas rendering</li>
+                        <li>Optimized performance engine</li>
+                        <li>Responsive design interface</li>
+                        <li>Cross-platform compatibility</li>
+                        <li>No installation required</li>
+                    </ul>
+                </div>
+                
+                <div class="feature">
+                    <h3>🎯 Suitable For</h3>
+                    <ul>
+                        <li>Basic technical drawings</li>
+                        <li>Simple floor plans</li>
+                        <li>Educational CAD projects</li>
+                        <li>Concept sketches and layouts</li>
+                        <li>Learning CAD fundamentals</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="warning-list">
+                <h4>Beta Version Limitations:</h4>
+                <ul>
+                    <li>File export limited to basic formats (no DXF/DWG export yet)</li>
+                    <li>Advanced CAD features like dimensioning not implemented</li>
+                    <li>Hatch patterns are basic line collections</li>
+                    <li>Text editing capabilities are limited</li>
+                    <li>No printing or plot functionality yet</li>
+                    <li>Performance may slow with very large drawings</li>
+                    <li>Some professional CAD tools are missing</li>
+                </ul>
+            </div>
+            
+            <div class="cta-section">
+                <a href="cad.html" class="cta-button">Launch Web1CAD Beta</a>
+                <p style="margin-top: 1rem; color: #666;">
+                    Experience the future of browser-based CAD design
+                </p>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>© 2025 Oleh Korobkov. All rights reserved.</p>
+            <p>Web1CAD Professional 2D CAD System - Beta Version 25.07.31</p>
+        </footer>
+    </div>
+    
+    <!-- Schema.org structured data for better SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Web1CAD",
+        "description": "Professional browser-based 2D CAD system with advanced drawing tools, layer management, and real-time collaboration capabilities.",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web Browser",
+        "author": {
+            "@type": "Person",
+            "name": "Oleh Korobkov"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "softwareVersion": "Beta 25.07.31",
+        "releaseNotes": "Beta version with ongoing development and feature improvements",
+        "screenshot": "",
+        "featureList": [
+            "2D CAD drawing tools",
+            "Multi-layer support",
+            "Browser-based operation",
+            "Professional design features",
+            "Cross-platform compatibility"
+        ]
+    }
+    </script>
+</body>
+</html>
