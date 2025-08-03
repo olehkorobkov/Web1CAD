@@ -1,10 +1,15 @@
 # Web1CAD Version Information
 
-**Current Version**: 0.250801  
-**Release Date**: August 1, 2025  
+**Current Version**: 0.250803 Beta  
+**Release Date**: August 3, 2025  
 **Version Format**: YY.MMDD (Year.MonthDay)
 
 ## Version History
+- **0.250803** (August 3, 2025) - PDF Export Integration (Beta)
+  - Professional PDF export with vector graphics
+  - Area selection with real-time preview
+  - Multiple paper formats and custom scaling
+  - Advanced export options and settings
 - **0.250801** (August 1, 2025) - Major optimization release
   - Coordinate-based command system implementation
   - Code optimization reducing duplication by 67%

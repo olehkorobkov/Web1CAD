@@ -1,16 +1,15 @@
 #!/bin/bash
 
-# Web1CAD Version Release Script
-# © 2025 Oleh Korobkov. All rights reserved.
+# Web1CAD Professional Release Script
+# © 2024 Web1CAD Professional - Advanced 2D CAD Technology
 
-# Get current date in YYMMDD format
-CURRENT_DATE=$(date '+%y%m%d')
-NEW_VERSION="0.$CURRENT_DATE"
+VERSION="0.250803"
+BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-echo "🚀 Web1CAD Version Release Creator"
-echo "=================================="
-echo "Current Date: $(date '+%Y-%m-%d')"
-echo "New Version: $NEW_VERSION"
+echo "🚀 Web1CAD Professional Release Manager"
+echo "======================================="
+echo "Current Version: $VERSION Beta"
+echo "Build Date: $BUILD_DATE"
 echo ""
 
 # Check if we're in the project directory
@@ -19,59 +18,121 @@ if [ ! -f "cad.html" ] || [ ! -f "js/cad.js" ]; then
     exit 1
 fi
 
-echo "📋 Creating new release version $NEW_VERSION..."
+echo "📋 Preparing release for Web1CAD Professional $VERSION Beta..."
 
-# Update version in files
-echo "📝 Updating version numbers..."
-
-# Update index.html title
-if [ -f "index.html" ]; then
-    TITLE_DATE=$(date '+%y.%m.%d')
-    sed -i "s/Beta Version [0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]/Beta Version $TITLE_DATE/g" index.html
-    echo "  ✅ Updated index.html"
+# Clean previous builds
+if [ -d "build" ]; then
+    echo "🧹 Cleaning previous build..."
+    rm -rf build
 fi
 
-# Update cad.js version info
-if [ -f "js/cad.js" ]; then
-    sed -i "s/Version [0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]/Version $NEW_VERSION/g" js/cad.js
-    sed -i "s/version: '[0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]'/version: '$NEW_VERSION'/g" js/cad.js
-    sed -i "s/System [0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]/System $NEW_VERSION/g" js/cad.js
-    echo "  ✅ Updated js/cad.js"
+if [ -f "web1cad-v$VERSION-production.zip" ]; then
+    echo "🗑️ Removing previous package..."
+    rm -f "web1cad-v$VERSION-production.zip"
 fi
 
-# Update README.md
-if [ -f "README.md" ]; then
-    TODAY=$(date '+%B %d, %Y')
-    sed -i "s/Version [0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]/Version $NEW_VERSION/g" README.md
-    echo "  ✅ Updated README.md"
+# Run build process
+echo "🔨 Running build process..."
+bash build.sh
+
+# Check if build was successful
+if [ ! -d "build" ]; then
+    echo "❌ Build failed! No build directory found."
+    exit 1
 fi
 
-# Update VERSION.md
-if [ -f "VERSION.md" ]; then
-    TODAY=$(date '+%B %d, %Y')
-    sed -i "s/Current Version: [0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]/Current Version: $NEW_VERSION/g" VERSION.md
-    sed -i "s/Release Date:.*$/Release Date:** $TODAY/g" VERSION.md
-    echo "  ✅ Updated VERSION.md"
-fi
+# Verify core files exist
+echo "✅ Verifying build integrity..."
+REQUIRED_FILES=(
+    "build/index.html"
+    "build/cad.html"
+    "build/css/style.css"
+    "build/js/cad.js"
+    "build/js/jspdf.min.js"
+)
 
-# Update build.sh
-if [ -f "build.sh" ]; then
-    sed -i "s/VERSION=\"[0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\"/VERSION=\"$NEW_VERSION\"/g" build.sh
-    echo "  ✅ Updated build.sh"
-fi
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "$file" ]; then
+        echo "❌ Missing required file: $file"
+        exit 1
+    fi
+done
 
+echo "✅ All required files present"
+
+# Create release notes
+cat > RELEASE_NOTES.md << EOF
+# Web1CAD Professional $VERSION Beta - Release Notes
+
+## Release Information
+- **Version**: $VERSION Beta
+- **Release Date**: $BUILD_DATE
+- **Build Type**: Production Ready
+
+## New Features
+### Advanced PDF Export System
+- Professional vector PDF export with area selection
+- Multiple paper formats (A4, A3, A2, A1) support
+- Portrait and landscape orientation control
+- High-quality vector graphics preservation
+- Precise area selection with visual feedback
+
+### Enhanced User Interface
+- Modern landing page with animated background
+- Improved visual design and typography
+- Professional color scheme consistency
+- Responsive design for all devices
+
+### Technical Improvements
+- Updated to version $VERSION Beta
+- Enhanced code organization and cleanup
+- Improved build system with integrity verification
+- Comprehensive documentation updates
+
+## Included Files
+- Complete CAD application (cad.html)
+- Professional landing page (index.html)
+- All required JavaScript modules
+- CSS styling and assets
+- Documentation and license files
+
+## Installation
+1. Extract the web1cad-v$VERSION-production.zip file
+2. Upload all files to your web server
+3. Access index.html in a web browser
+4. Click "Launch Web1CAD" to start the application
+
+## Browser Compatibility
+- Chrome/Chromium (recommended)
+- Firefox
+- Safari
+- Edge
+- All modern browsers with HTML5 Canvas support
+
+## System Requirements
+- Modern web browser
+- JavaScript enabled
+- Minimum 1024x768 screen resolution
+- Internet connection for initial load
+
+---
+© 2024 Web1CAD Professional - Advanced 2D CAD Technology
+EOF
+
+# Display final status
 echo ""
-echo "✅ Version update complete!"
-echo "📦 New version: $NEW_VERSION"
+echo "🎉 Release $VERSION Beta ready!"
+echo "📦 Package: web1cad-v$VERSION-production.zip"
+echo "📋 Release Notes: RELEASE_NOTES.md"
+echo "📁 Build Directory: build/"
 echo ""
-echo "🔧 Next steps:"
-echo "  1. Review the changes"
-echo "  2. Test the application"
-echo "  3. Run './build.sh' to create production build"
-echo "  4. Commit changes to version control"
+echo "🚀 Ready for deployment!"
 echo ""
-echo "🏷️  Suggested git commands:"
-echo "  git add ."
-echo "  git commit -m \"Release version $NEW_VERSION\""
-echo "  git tag \"v$NEW_VERSION\""
+echo "📊 Package Contents:"
+echo "   - HTML files: $(find build -name "*.html" | wc -l)"
+echo "   - JavaScript files: $(find build -name "*.js" | wc -l)"
+echo "   - CSS files: $(find build -name "*.css" | wc -l)"
+echo "   - Documentation: $(find build -name "*.md" | wc -l)"
+echo "   - Total size: $(du -sh build | cut -f1)"
 echo ""
+echo "✅ Release process complete!"

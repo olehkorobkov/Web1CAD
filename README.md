@@ -1,41 +1,47 @@
-# Web1CAD - Professional 2D CAD System
+# Web1CAD - Advanced 2D CAD System
 
-**Version 0.250801** | **Release Date**: August 1, 2025
+**Version 0.250803** | **Release Date**: August 3, 2025
 
 A powerful browser-based 2D CAD system developed by Oleh Korobkov.
 
 ## 🚀 Features
 
 ### Core CAD Functionality
-- **Drawing Tools**: Line, Circle, Arc, Rectangle, Polygon, Polyline, Ellipse, Spline, Hatch, Point, Text
-- **Coordinate System**: Precise coordinate-based object creation
-- **Command Interface**: Advanced command system with batch processing
-- **Layer Management**: Professional layer system with visibility and locking
-- **Selection Tools**: Multi-select, select all, and advanced selection operations
+- **Drawing Tools**: Line, Polyline, Circle, Ellipse, Arc, Rectangle, Polygon, Spline, Hatch, Point, Text
+- **Vector PDF Export**: Advanced area selection with multiple paper formats (A0-A4, Letter, Legal, Tabloid)
+- **Layer Management**: Layer system with visibility control, locking, and color management
+- **Command Interface**: Command-line system for coordinate-based object creation
+- **File Operations**: Save/load projects (.wcd, .json formats) with import/export functionality
 
 ### Advanced Features
+- **Vector PDF Export**: Export selected areas to PDF with true vector graphics preservation
+  - Multiple paper formats: A0, A1, A2, A3, A4, Letter, Legal, Tabloid
+  - Portrait and landscape orientation support
+  - Quality settings and margin controls
 - **Coordinate Commands**: Create objects with precise coordinates
   - `line 0,0 100,100` - Create line from point to point
   - `circle 50,50 25` - Create circle at center with radius
   - `arc 0,0 100,100 90` - Create arc with two points and sweep angle
-- **Batch Processing**: Execute multiple commands in sequence
-- **Focus Management**: Seamless command input with auto-blur
-- **Error Handling**: Comprehensive validation and error reporting
+  - `rectangle 10,10 50,30` - Create rectangle with precise dimensions
+- **Real-time Precision**: Dynamic coordinate display, measurements, and calculations
+- **Cross-Platform**: Runs in any modern web browser with zero installation
 
 ### Technical Highlights
-- **Optimized Codebase**: 67% reduction in code duplication
-- **Regex-based Parsing**: Efficient command validation
-- **Unified Architecture**: COMMAND_CONFIGS object for maintainable code
-- **Security Features**: Code protection and validation systems
+- **HTML5 Canvas**: High-performance graphics rendering
+- **Vector PDF Export**: True vector graphics with jsPDF library
+- **Modular Architecture**: Organized codebase with separate modules
+- **Command System**: Regex-based parsing and validation
+- **Layer Management**: Advanced layer system with full control
+- **Responsive Design**: Works on desktop and mobile devices
 
 ## 🛠️ Installation & Usage
 
 ### Quick Start
 1. Open `index.html` in a web browser for project information
-2. Click "Launch Web1CAD Beta" or open `cad.html` directly
+2. Click "Launch Web1CAD" or open `cad.html` directly
 3. Use toolbar buttons for drawing tools
-4. Type commands in the command input field
-5. Use coordinate format: `tool x,y parameters`
+4. Use command input for precise coordinate-based construction
+5. Export drawings to PDF using the area selection tool
 
 ### Command Examples
 ```
@@ -54,15 +60,17 @@ rectangle 10,10 50,30     # Rectangle at (10,10) with size 50x30
 ## 📁 Project Structure
 
 ```
-Web1CAD ver.0.250801/
+Web1CAD ver.0.250803/
 ├── index.html           # Landing page
 ├── cad.html            # Main CAD application
+├── icon.png            # Application icon
 ├── css/style.css       # Application styling
 ├── js/
 │   ├── cad.js          # Core CAD engine
-│   ├── command-system.js # Optimized command processor
+│   ├── command-system.js # Command processor
 │   ├── geometry-utils.js # Geometric calculations
 │   ├── shape-renderer.js # Shape rendering engine
+│   ├── jspdf.min.js    # PDF export library
 │   └── [other modules] # Additional functionality
 ├── build.sh            # Build script
 ├── release.sh          # Release packaging
@@ -73,24 +81,27 @@ Web1CAD ver.0.250801/
 
 ### Architecture
 - **Modular Design**: Separate files for different functionality
-- **Event-driven**: Canvas-based interaction system
-- **Command Pattern**: Unified command processing
-- **Error Handling**: Comprehensive validation throughout
+- **Canvas-based**: HTML5 Canvas for high-performance graphics
+- **Command Pattern**: Unified command processing system
+- **Layer System**: Advanced layer management with visibility control
+- **Vector Graphics**: True vector PDF export capabilities
 
 ### Code Quality
-- **Optimized**: Reduced from 780+ lines to 263 lines in command system
-- **Maintainable**: Unified configuration objects
-- **Secure**: Protected against common vulnerabilities
-- **Tested**: Comprehensive error checking and validation
+- **Modern JavaScript**: ES6+ features and best practices
+- **Maintainable**: Clear structure and documentation
+- **Responsive**: Works across different screen sizes
+- **Cross-browser**: Compatible with all modern browsers
+- **Performance**: Optimized rendering and calculations
 
 ## 📋 Version Information
 
-**Current Version**: 0.250801 (August 1, 2025)
-- Major optimization release
-- Coordinate command system
-- Advanced arc creation
-- Focus management improvements
-- Code deduplication and optimization
+**Current Version**: 0.250803 (August 3, 2025)
+- Advanced vector PDF export with area selection
+- Multiple paper format support (A0-A4, Letter, Legal, Tabloid)
+- Enhanced layer management system
+- Improved command interface
+- Cross-platform browser compatibility
+- Real-time precision tools and measurements
 
 ## 📄 License
 
@@ -100,7 +111,8 @@ This software is proprietary and confidential. Unauthorized use, reproduction, o
 
 ## 🔗 Links
 
-- **Project**: Web1CAD Professional 2D CAD System
+- **Project**: Web1CAD Advanced 2D CAD System
 - **Developer**: Oleh Korobkov
-- **Release**: Version 0.250801
-- **Date**: August 1, 2025
+- **Version**: 0.250803
+- **Release Date**: August 3, 2025
+- **Features**: Vector PDF Export, Layer Management, Command Interface

@@ -1,34 +1,12 @@
 <!DOCTYPE html>
-<!--
-    Web1CAD Preview Page - Professional 2D CAD System
-    Developed by Oleh Korobkov
-    © 2025 Oleh Korobkov. All rights reserved.
--->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Web1CAD - Professional 2D CAD System | Beta Version 0.250801</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO Meta Tags for Google Search -->
-    <meta name="description" content="Web1CAD - Professional browser-based 2D CAD system with advanced drawing tools, layer management, and real-time collaboration. Beta version with ongoing development.">
-    <meta name="keywords" content="CAD software, 2D CAD, web CAD, browser CAD, technical drawing, AutoCAD alternative, online CAD, engineering drawing, architectural drawing">
-    <meta name="author" content="Oleh Korobkov">
-    <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
-    
-    <!-- Open Graph Meta Tags for Social Media -->
-    <meta property="og:title" content="Web1CAD - Professional 2D CAD System">
-    <meta property="og:description" content="Advanced browser-based CAD software for professional technical drawing and design. Features include multi-layer support, precision tools, and real-time collaboration.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="">
-    <meta property="og:site_name" content="Web1CAD">
-    
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Web1CAD - Professional 2D CAD System">
-    <meta name="twitter:description" content="Browser-based CAD software with advanced drawing tools and professional features.">
-    
+    <title>Web1CAD - Advanced 2D CAD Design System</title>
+    <meta name="description" content="Web1CAD - Advanced browser-based 2D CAD system with drawing tools, vector PDF export, and real-time precision design capabilities.">
+    <meta name="keywords" content="CAD, 2D design, technical drawing, browser CAD, PDF export, engineering, architecture">
+    <link rel="icon" type="image/png" href="icon.png">
     <style>
         * {
             margin: 0;
@@ -37,308 +15,452 @@
         }
         
         body {
-            font-family: 'Courier New', monospace;
-            line-height: 1.6;
-            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: #1a1a1a;
-            min-height: 100vh;
+            color: #e0e0e0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(64, 224, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(64, 224, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
+            position: relative;
+            z-index: 1;
         }
         
         .header {
             text-align: center;
             margin-bottom: 3rem;
             color: #e0e0e0;
+            background: rgba(26, 26, 26, 0.8);
+            padding: 3rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(64, 224, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .header h1 {
-            font-size: 3.5rem;
+            font-size: 4rem;
             font-weight: 700;
             margin-bottom: 1rem;
-            color: #66bb6a;
-            text-shadow: 0 0 10px rgba(102, 187, 106, 0.3);
+            background: linear-gradient(45deg, #40e0ff, #66bb6a, #40e0ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(64, 224, 255, 0.3);
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
         
         .header .subtitle {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             opacity: 0.9;
             margin-bottom: 2rem;
             color: #e0e0e0;
+            font-weight: 300;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #40e0ff, #66bb6a);
+            color: #1a1a1a;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 1rem;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(64, 224, 255, 0.5); }
+            to { box-shadow: 0 0 20px rgba(64, 224, 255, 0.8), 0 0 30px rgba(102, 187, 106, 0.3); }
         }
         
         .beta-notice {
-            background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
-            color: #81c784;
-            border: 1px solid #666;
-            padding: 1rem 2rem;
-            border-radius: 3px;
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 87, 34, 0.1));
+            color: #ffb74d;
+            border: 2px solid rgba(255, 193, 7, 0.3);
+            padding: 1.5rem 2rem;
+            border-radius: 15px;
             text-align: center;
             font-weight: 600;
             font-size: 1.1rem;
             margin-bottom: 3rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            animation: pulse 2s infinite;
+            backdrop-filter: blur(5px);
+            animation: pulse 3s infinite;
         }
         
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.8; }
-            100% { opacity: 1; }
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
         }
         
         .main-content {
-            background: linear-gradient(180deg, #3a3a3a 0%, #2e2e2e 100%);
-            border: 2px solid #555;
-            border-radius: 3px;
+            background: rgba(45, 45, 45, 0.8);
+            border: 1px solid rgba(64, 224, 255, 0.2);
+            border-radius: 15px;
             padding: 3rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             margin-bottom: 2rem;
         }
         
         .description {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             margin-bottom: 3rem;
             color: #e0e0e0;
             text-align: center;
+            line-height: 1.8;
         }
         
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
             margin-bottom: 3rem;
         }
         
         .feature {
-            background: linear-gradient(180deg, #424242 0%, #383838 100%);
-            border: 1px solid #666;
-            padding: 2rem;
-            border-radius: 3px;
+            background: linear-gradient(135deg, rgba(66, 66, 66, 0.8), rgba(56, 56, 56, 0.8));
+            border: 1px solid rgba(102, 187, 106, 0.3);
+            padding: 2.5rem;
+            border-radius: 15px;
             border-left: 4px solid #66bb6a;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(64, 224, 255, 0.05), rgba(102, 187, 106, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .feature:hover::before {
+            opacity: 1;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
+            border-color: rgba(64, 224, 255, 0.5);
         }
         
         .feature h3 {
-            color: #81c784;
+            color: #40e0ff;
+            font-size: 1.5rem;
             margin-bottom: 1rem;
-            font-size: 1.3rem;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
         }
         
-        .feature ul {
-            list-style: none;
-            padding: 0;
+        .feature p {
+            color: #cccccc;
+            line-height: 1.7;
+            font-size: 1rem;
+            position: relative;
+            z-index: 1;
         }
         
-        .feature li {
-            padding: 0.5rem 0;
-            color: #e0e0e0;
+        .pdf-feature {
+            background: linear-gradient(135deg, rgba(64, 224, 255, 0.1), rgba(102, 187, 106, 0.1));
+            border: 2px solid rgba(64, 224, 255, 0.3);
+            position: relative;
+            overflow: hidden;
         }
         
-        .feature li:before {
-            content: "✓ ";
+        .pdf-feature::after {
+            content: '📄';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 2rem;
+            opacity: 0.2;
+        }
+        
+        .pdf-feature h3 {
+            color: #40e0ff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .pdf-feature h3::before {
+            content: '⚡';
             color: #66bb6a;
-            font-weight: bold;
-            margin-right: 0.5rem;
         }
         
-        .cta-section {
-            text-align: center;
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
             margin-top: 3rem;
+            flex-wrap: wrap;
         }
         
         .cta-button {
-            display: inline-block;
-            background: linear-gradient(180deg, #5a5a5a 0%, #4a4a4a 100%);
-            color: #81c784;
-            border: 1px solid #666;
-            padding: 1rem 3rem;
+            background: linear-gradient(45deg, #40e0ff, #66bb6a);
+            color: #1a1a1a;
             text-decoration: none;
-            border-radius: 3px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            font-family: 'Courier New', monospace;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            padding: 1.2rem 3rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(64, 224, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .cta-button:hover::before {
+            left: 100%;
         }
         
         .cta-button:hover {
-            background: linear-gradient(180deg, #6a6a6a 0%, #5a5a5a 100%);
-            border-color: #888;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-            text-shadow: 0 0 5px rgba(102, 187, 106, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(64, 224, 255, 0.5);
+            text-decoration: none;
+            color: #1a1a1a;
+        }
+        
+        .cta-button.secondary {
+            background: linear-gradient(45deg, #424242, #616161);
+            color: #e0e0e0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .cta-button.secondary:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            color: #e0e0e0;
         }
         
         .footer {
             text-align: center;
-            color: #999;
-            margin-top: 2rem;
+            margin-top: 4rem;
+            color: #888;
             font-size: 0.9rem;
+            opacity: 0.8;
         }
         
-        .warning-list {
-            background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
-            border: 1px solid #777;
-            border-radius: 3px;
-            padding: 1.5rem;
-            margin: 2rem 0;
+        .tech-specs {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(64, 224, 255, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            backdrop-filter: blur(10px);
         }
         
-        .warning-list h4 {
-            color: #ffb74d;
-            margin-bottom: 1rem;
+        .tech-specs h3 {
+            color: #40e0ff;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
         }
         
-        .warning-list ul {
+        .tech-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
             list-style: none;
             padding: 0;
         }
         
-        .warning-list li {
-            padding: 0.3rem 0;
-            color: #e0e0e0;
+        .tech-list li {
+            background: rgba(66, 66, 66, 0.5);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: #cccccc;
+            border-left: 3px solid #66bb6a;
+            transition: all 0.3s ease;
         }
         
-        .warning-list li:before {
-            content: "⚠️ ";
-            margin-right: 0.5rem;
+        .tech-list li:hover {
+            transform: translateX(5px);
+            background: rgba(102, 187, 106, 0.1);
         }
         
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .container {
-                padding: 1rem;
-            }
-            
-            .main-content {
-                padding: 2rem;
-            }
+            .container { padding: 1rem; }
+            .header h1 { font-size: 2.5rem; }
+            .header .subtitle { font-size: 1.2rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .button-group { flex-direction: column; align-items: center; }
+            .main-content { padding: 2rem; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1>Web1CAD <span style="font-size: 0.6em; color: #999;">v0.250801</span></h1>
-            <div class="subtitle">Professional 2D CAD System</div>
-        </header>
-        
-        <div class="beta-notice">
-            🚧 BETA VERSION - Some features are currently under development
+        <div class="header">
+            <h1>Web1CAD</h1>
+            <p class="subtitle">Advanced 2D Computer-Aided Design in Your Browser</p>
+            <div class="version-badge">Version 0.250803 Beta</div>
         </div>
         
-        <main class="main-content">
+        <div class="beta-notice">
+            🚀 Beta Version Available - Experience cutting-edge PDF export technology and enhanced drawing capabilities!
+        </div>
+        
+        <div class="main-content">
             <div class="description">
-                <strong>Web1CAD</strong> is a browser-based 2D Computer-Aided Design (CAD) system designed for basic technical drawing and design tasks. This beta version provides essential drawing tools and features for simple CAD projects.
+                A powerful, browser-based 2D CAD application that brings advanced design tools to your fingertips. 
+                Create precise technical drawings, architectural plans, and engineering diagrams with our comprehensive toolset 
+                and new advanced vector PDF export capabilities.
             </div>
             
             <div class="features-grid">
                 <div class="feature">
-                    <h3>🎨 Drawing Tools</h3>
-                    <ul>
-                        <li>Lines, polylines, and smooth splines</li>
-                        <li>Circles, ellipses, and arcs</li>
-                        <li>Rectangles and regular polygons</li>
-                        <li>Text annotations and points</li>
-                        <li>Basic hatch patterns</li>
-                    </ul>
+                    <h3>Drawing Tools</h3>
+                    <p>Complete set of precision drawing tools including lines, polylines, circles, arcs, ellipses, rectangles, 
+                    polygons, splines, hatch patterns, points, and text. All tools feature snap-to-grid functionality and 
+                    precise coordinate input for accurate technical drawings.</p>
+                </div>
+                
+                <div class="feature pdf-feature">
+                    <h3>Vector PDF Export</h3>
+                    <p><strong>NEW:</strong> Advanced vector PDF export with area selection, multiple paper formats (A0-A4, Letter, Legal, Tabloid), 
+                    orientation control (portrait/landscape), quality settings, and precise vector graphics preservation. Export specific drawing areas with full control.</p>
                 </div>
                 
                 <div class="feature">
-                    <h3>🗂️ Professional Features</h3>
-                    <ul>
-                        <li>Multi-layer management system</li>
-                        <li>Zoom and pan navigation</li>
-                        <li>Grid display and snap modes</li>
-                        <li>Undo/redo operations</li>
-                        <li>Object selection and editing</li>
-                    </ul>
+                    <h3>Real-time Precision</h3>
+                    <p>Dynamic coordinate display, real-time measurements, angle calculations, and distance tools. 
+                    Grid system with customizable spacing and snap-to-grid functionality for precise CAD workflows.</p>
                 </div>
                 
                 <div class="feature">
-                    <h3>⚡ Modern Technology</h3>
-                    <ul>
-                        <li>HTML5 Canvas rendering</li>
-                        <li>Optimized performance engine</li>
-                        <li>Responsive design interface</li>
-                        <li>Cross-platform compatibility</li>
-                        <li>No installation required</li>
-                    </ul>
+                    <h3>Layer Management</h3>
+                    <p>Advanced layer system with visibility control, locking, and color management. Organize complex drawings 
+                    with multiple layers for better project structure and workflow efficiency.</p>
                 </div>
                 
                 <div class="feature">
-                    <h3>🎯 Suitable For</h3>
-                    <ul>
-                        <li>Basic technical drawings</li>
-                        <li>Simple floor plans</li>
-                        <li>Educational CAD projects</li>
-                        <li>Concept sketches and layouts</li>
-                        <li>Learning CAD fundamentals</li>
-                    </ul>
+                    <h3>Command System</h3>
+                    <p>Powerful command-line interface for coordinate-based object creation. Execute commands like 
+                    'line 0,0 100,100' or 'circle 50,50 25' for precise geometric construction and batch operations.</p>
+                </div>
+                
+                <div class="feature">
+                    <h3>Cross-Platform Compatibility</h3>
+                    <p>Runs seamlessly in any modern web browser across Windows, macOS, and Linux. 
+                    No installation required - access your CAD tools instantly from anywhere with zero setup.</p>
                 </div>
             </div>
             
-            <div class="warning-list">
-                <h4>Beta Version Limitations:</h4>
-                <ul>
-                    <li>File export limited to basic formats (no DXF/DWG export yet)</li>
-                    <li>Advanced CAD features like dimensioning not implemented</li>
-                    <li>Hatch patterns are basic line collections</li>
-                    <li>Text editing capabilities are limited</li>
-                    <li>No printing or plot functionality yet</li>
-                    <li>Performance may slow with very large drawings</li>
-                    <li>Some professional CAD tools are missing</li>
+            <div class="tech-specs">
+                <h3>Technical Specifications</h3>
+                <ul class="tech-list">
+                    <li>HTML5 Canvas Graphics</li>
+                    <li>Vector PDF Export (jsPDF)</li>
+                    <li>Command-Line Interface</li>
+                    <li>Layer Management System</li>
+                    <li>Responsive Design</li>
+                    <li>Cross-Browser Support</li>
+                    <li>Real-time Rendering</li>
+                    <li>Geometric Calculations</li>
+                    <li>Coordinate System</li>
+                    <li>File Import/Export (.wcd, .json)</li>
+                    <li>Undo/Redo Operations</li>
+                    <li>Zero Installation</li>
                 </ul>
             </div>
             
-            <div class="cta-section">
-                <a href="cad.html" class="cta-button">Launch Web1CAD Beta</a>
-                <p style="margin-top: 1rem; color: #666;">
-                    Experience the future of browser-based CAD design
-                </p>
+            <div class="button-group">
+                <a href="cad.html" class="cta-button">Launch Web1CAD</a>
+                <a href="README.md" class="cta-button secondary">View Documentation</a>
             </div>
-        </main>
+        </div>
         
-        <footer class="footer">
-            <p>© 2025 Oleh Korobkov. All rights reserved.</p>
-            <p>Web1CAD Professional 2D CAD System - Beta Version 0.250801</p>
-        </footer>
+        <div class="footer">
+            <p>&copy; 2025 Web1CAD - Advanced 2D CAD Technology</p>
+        </div>
     </div>
-    
+
     <!-- Schema.org structured data for better SEO -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "Web1CAD",
-        "description": "Professional browser-based 2D CAD system with advanced drawing tools, layer management, and real-time collaboration capabilities.",
+        "description": "Advanced browser-based 2D CAD system with drawing tools, vector PDF export, and real-time precision design capabilities.",
         "applicationCategory": "DesignApplication",
         "operatingSystem": "Web Browser",
         "author": {
             "@type": "Person",
-            "name": "Oleh Korobkov"
+            "name": "Developer"
         },
         "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "USD"
         },
-        "softwareVersion": "Beta 0.250801",
-        "releaseNotes": "Beta version with ongoing development and feature improvements",
-        "screenshot": "",
+        "softwareVersion": "Beta 0.250803",
+        "releaseNotes": "Beta version with advanced vector PDF export functionality and enhanced drawing capabilities",
         "featureList": [
-            "2D CAD drawing tools",
-            "Multi-layer support",
-            "Browser-based operation",
-            "Professional design features",
-            "Cross-platform compatibility"
+            "2D CAD drawing tools (line, circle, arc, rectangle, polygon, polyline, ellipse, spline)",
+            "Vector PDF export with area selection and multiple paper formats",
+            "Real-time precision measurements and coordinates",
+            "Layer management system with visibility and locking",
+            "Command-line interface for coordinate-based construction",
+            "Cross-platform browser compatibility",
+            "File import/export (.wcd, .json formats)",
+            "HTML5 Canvas rendering",
+            "Zero installation required"
         ]
     }
     </script>

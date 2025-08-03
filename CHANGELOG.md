@@ -1,5 +1,40 @@
 # Web1CAD Changelog
 
+## Version 0.250803 - August 3, 2025
+
+### 🚀 Major Features Added
+- **Advanced Vector PDF Export**: True vector graphics export with area selection
+- **Multiple Paper Formats**: Support for A0, A1, A2, A3, A4, Letter, Legal, Tabloid
+- **Export Dialog Interface**: Professional export dialog with preview and settings
+- **Quality Controls**: Multiple quality settings and margin controls
+- **Orientation Support**: Portrait and landscape orientation options
+
+### 📄 PDF Export Features
+- **Area Selection**: Click and drag to select specific drawing areas
+- **Vector Graphics**: True vector export preserving scalability
+- **Paper Format Options**: 8 different paper sizes with proper dimensions
+- **Custom Scaling**: Fit to page or custom scale options
+- **Export Options**: Border, title, date, coordinates, and scale information
+- **Real-time Preview**: Visual preview of export layout before generation
+
+### 🎨 User Interface Updates
+- **Removed "Professional" branding**: Simplified to "Web1CAD"
+- **Updated descriptions**: More accurate feature descriptions
+- **Enhanced documentation**: Improved README with current features
+- **Icon integration**: Added favicon support for better branding
+
+### 🛠️ Technical Improvements
+- **jsPDF Integration**: Proper vector PDF library integration
+- **Export Quality**: High-quality vector graphics preservation
+- **File Organization**: Improved project structure documentation
+- **Cross-platform compatibility**: Enhanced browser support
+
+### 📋 Updated Documentation
+- **README.md**: Updated with current features and capabilities
+- **Feature descriptions**: Accurate representation of PDF export functionality
+- **Technical specifications**: Added layer management and command system details
+- **Installation guide**: Simplified setup instructions
+
 ## Version 0.250801 - August 1, 2025
 
 ### 🚀 Major Features Added

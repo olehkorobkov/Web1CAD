@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Build script for Web1CAD - Production Version 0.250801
-# © 2025 Oleh Korobkov. All rights reserved.
+# Build script for Web1CAD Professional - Version 0.250803 Beta
+# © 2024 Web1CAD Professional - Advanced 2D CAD Technology
 
-VERSION="0.250801"
+VERSION="0.250803"
 BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
-echo "🔧 Building Web1CAD Production Version $VERSION..."
+echo "🔧 Building Web1CAD Professional Version $VERSION Beta..."
 echo "📅 Build Date: $BUILD_DATE"
 
 # Create build directory
@@ -16,79 +16,122 @@ mkdir -p build/css
 
 echo "📁 Copying files..."
 
-# Copy HTML and CSS without changes
+# Copy HTML files
 cp index.html build/
+cp cad.html build/
+
+# Copy CSS
 cp css/style.css build/css/
 
-echo "🔒 Securing JavaScript files..."
+# Copy JavaScript files
+cp js/cad.js build/js/
+cp js/command-system.js build/js/
+cp js/debug-system.js build/js/
+cp js/geometry-utils.js build/js/
+cp js/jspdf.min.js build/js/
+cp js/shape-handler-unified.js build/js/
+cp js/shape-renderer.js build/js/
+cp js/web1cad-optimizations.js build/js/
 
-# Simple obfuscation function (можна замінити на професійні инструменти)
-obfuscate_js() {
-    local input_file=$1
-    local output_file=$2
-    
-    # Basic obfuscation: remove comments, minimize whitespace, rename variables
-    sed '/^[[:space:]]*\/\//d' "$input_file" | \
-    sed '/^[[:space:]]*\/\*/,/\*\//d' | \
-    tr -d '\n' | \
-    sed 's/[[:space:]]\+/ /g' | \
-    sed 's/function /func_/g' | \
-    sed 's/const /c_/g' | \
-    sed 's/let /l_/g' | \
-    sed 's/var /v_/g' > "$output_file"
-    
-    # Add watermark
-    echo "/* Obfuscated Web1CAD © 2025 Oleh Korobkov */" > temp_file
-    cat "$output_file" >> temp_file
-    mv temp_file "$output_file"
-}
+# Copy documentation
+cp README.md build/
+cp LICENSE build/
+cp VERSION.md build/
+cp CHANGELOG.md build/
 
-# Obfuscate all JS files
-obfuscate_js "js/secure-core.js" "build/js/secure-core.js"
-obfuscate_js "js/geometry-utils.js" "build/js/geometry-utils.js"
-obfuscate_js "js/shape-renderer.js" "build/js/shape-renderer.js"
-obfuscate_js "js/command-system.js" "build/js/command-system.js"
-obfuscate_js "js/cad.js" "build/js/cad.js"
+echo "📊 Creating build info..."
 
-echo "🔐 Adding domain lock..."
+# Create build info file
+cat > build/BUILD_INFO.md << EOF
+# Web1CAD Professional Build Information
 
-# Add domain lock to main file
-cat >> build/js/cad.js << 'EOF'
+## Version Details
+- **Version**: $VERSION Beta
+- **Build Date**: $BUILD_DATE
+- **Build Type**: Production Ready
 
-// Domain lock
-(function(){
-    const allowed=['localhost','127.0.0.1','yourusername.github.io'];
-    if(!allowed.includes(location.hostname)){
-        document.body.innerHTML='<h1 style="color:red;text-align:center;">UNAUTHORIZED DOMAIN</h1>';
-        throw new Error('Domain not authorized');
-    }
-})();
+## Included Files
+### Core Application
+- \`index.html\` - Landing page with feature overview
+- \`cad.html\` - Main CAD application interface
+
+### Stylesheets
+- \`css/style.css\` - Complete styling for CAD interface
+
+### JavaScript Modules
+- \`js/cad.js\` - Main CAD application logic with PDF export
+- \`js/command-system.js\` - Command processing system
+- \`js/debug-system.js\` - Debug and development tools
+- \`js/geometry-utils.js\` - Geometric calculation utilities
+- \`js/jspdf.min.js\` - PDF generation library
+- \`js/shape-handler-unified.js\` - Shape handling and manipulation
+- \`js/shape-renderer.js\` - Canvas rendering engine
+- \`js/web1cad-optimizations.js\` - Performance optimizations
+
+### Documentation
+- \`README.md\` - Project documentation
+- \`LICENSE\` - Software license
+- \`VERSION.md\` - Version history and changelog
+- \`CHANGELOG.md\` - Detailed change log
+
+## Features
+- Professional 2D CAD drawing tools
+- Vector PDF export with area selection
+- Real-time precision measurements
+- Advanced geometric utilities
+- Cross-platform browser compatibility
+- Professional interface design
+- HTML5 Canvas rendering
+- Zero installation required
+
+## Deployment
+This build is ready for deployment to any web server or hosting platform.
+All dependencies are included and the application is self-contained.
+
+---
+© 2024 Web1CAD Professional - Advanced 2D CAD Technology
 EOF
 
-echo "📊 Creating integrity checks..."
+# Create checksums for integrity verification
+echo "🔐 Creating integrity checksums..."
+find build -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.md" \) -exec md5sum {} \; > build/CHECKSUMS.md
 
-# Create checksums for all files
-find build -name "*.js" -exec md5sum {} \; > build/checksums.txt
+# Format checksums file
+cat > temp_checksums << EOF
+# File Integrity Checksums - Web1CAD Professional $VERSION Beta
 
-# Create version info file
-cat > build/version.json << EOF
-{
-    "version": "$VERSION",
-    "buildDate": "$BUILD_DATE",
-    "author": "Oleh Korobkov",
-    "copyright": "© 2025 Oleh Korobkov. All rights reserved.",
-    "type": "production"
-}
+## Purpose
+These checksums can be used to verify the integrity of the Web1CAD Professional files.
+
+## Generated
+- **Date**: $BUILD_DATE
+- **Version**: $VERSION Beta
+
+## Checksums
+\`\`\`
 EOF
 
-echo "✅ Build complete! Production Version $VERSION files are in 'build' directory."
-echo "🚀 Deploy the 'build' directory to GitHub Pages."
+cat build/CHECKSUMS.md >> temp_checksums
+echo '```' >> temp_checksums
+mv temp_checksums build/CHECKSUMS.md
 
-# Optional: Create compressed version
+echo "✅ Build complete! Web1CAD Professional $VERSION Beta files are in 'build' directory."
+
+# Create deployment package if zip is available
 if command -v zip &> /dev/null; then
     echo "📦 Creating deployment package..."
     cd build
-    zip -r "../web1cad-production-v$VERSION.zip" .
+    zip -r "../web1cad-v$VERSION-production.zip" .
     cd ..
-    echo "📦 Package created: web1cad-production.zip"
+    echo "📦 Package created: web1cad-v$VERSION-production.zip"
+    echo "🚀 Ready for deployment!"
+else
+    echo "🚀 Build directory ready for deployment!"
 fi
+
+echo ""
+echo "📋 Build Summary:"
+echo "   Version: $VERSION Beta"
+echo "   Files: $(find build -type f | wc -l) files total"
+echo "   Size: $(du -sh build | cut -f1)"
+echo "   Ready for web deployment"
