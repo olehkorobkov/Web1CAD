@@ -1,468 +1,231 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web1CAD v0.250804 Beta - 2D CAD System </title>
-    <meta name="description" content="Web1CAD - Advanced browser-based 2D CAD system with drawing tools, vector PDF export, and real-time precision design capabilities.">
-    <meta name="keywords" content="CAD, 2D design, technical drawing, browser CAD, PDF export, engineering, architecture">
-    <link rel="icon" type="image/png" href="icon.png">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            line-height: 1.6;
-            overflow-x: hidden;
-            position: relative;
-        }
-        
-        /* Animated background grid */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(64, 224, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(64, 224, 255, 0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: gridMove 20s linear infinite;
-            pointer-events: none;
-            z-index: -1;
-        }
-        
-        @keyframes gridMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 3rem;
-            color: #e0e0e0;
-            background: rgba(26, 26, 26, 0.8);
-            padding: 3rem;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(64, 224, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        
-        .header h1 {
-            font-size: 4rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(45deg, #40e0ff, #66bb6a, #40e0ff);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 3s ease-in-out infinite;
-            text-shadow: 0 0 30px rgba(64, 224, 255, 0.3);
-        }
-        
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        
-        .header .subtitle {
-            font-size: 1.6rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
-            color: #e0e0e0;
-            font-weight: 300;
-        }
-        
-        .version-badge {
-            display: inline-block;
-            background: linear-gradient(45deg, #40e0ff, #66bb6a);
-            color: #1a1a1a;
-            padding: 0.5rem 1.5rem;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 1rem;
-            margin-top: 1rem;
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-        
-        @keyframes glow {
-            from { box-shadow: 0 0 10px rgba(64, 224, 255, 0.5); }
-            to { box-shadow: 0 0 20px rgba(64, 224, 255, 0.8), 0 0 30px rgba(102, 187, 106, 0.3); }
-        }
-        
-        .beta-notice {
-            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 87, 34, 0.1));
-            color: #ffb74d;
-            border: 2px solid rgba(255, 193, 7, 0.3);
-            padding: 1.5rem 2rem;
-            border-radius: 15px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 3rem;
-            backdrop-filter: blur(5px);
-            animation: pulse 3s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.02); opacity: 0.9; }
-        }
-        
-        .main-content {
-            background: rgba(45, 45, 45, 0.8);
-            border: 1px solid rgba(64, 224, 255, 0.2);
-            border-radius: 15px;
-            padding: 3rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            margin-bottom: 2rem;
-        }
-        
-        .description {
-            font-size: 1.3rem;
-            margin-bottom: 3rem;
-            color: #e0e0e0;
-            text-align: center;
-            line-height: 1.8;
-        }
-        
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        
-        .feature {
-            background: linear-gradient(135deg, rgba(66, 66, 66, 0.8), rgba(56, 56, 56, 0.8));
-            border: 1px solid rgba(102, 187, 106, 0.3);
-            padding: 2.5rem;
-            border-radius: 15px;
-            border-left: 4px solid #66bb6a;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .feature::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(64, 224, 255, 0.05), rgba(102, 187, 106, 0.05));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .feature:hover::before {
-            opacity: 1;
-        }
-        
-        .feature:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
-            border-color: rgba(64, 224, 255, 0.5);
-        }
-        
-        .feature h3 {
-            color: #40e0ff;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            font-weight: 600;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .feature p {
-            color: #cccccc;
-            line-height: 1.7;
-            font-size: 1rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .pdf-feature {
-            background: linear-gradient(135deg, rgba(64, 224, 255, 0.1), rgba(102, 187, 106, 0.1));
-            border: 2px solid rgba(64, 224, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .pdf-feature::after {
-            content: '📄';
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 2rem;
-            opacity: 0.2;
-        }
-        
-        .pdf-feature h3 {
-            color: #40e0ff;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .pdf-feature h3::before {
-            content: '⚡';
-            color: #66bb6a;
-        }
-        
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 3rem;
-            flex-wrap: wrap;
-        }
-        
-        .cta-button {
-            background: linear-gradient(45deg, #40e0ff, #66bb6a);
-            color: #1a1a1a;
-            text-decoration: none;
-            padding: 1.2rem 3rem;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(64, 224, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .cta-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .cta-button:hover::before {
-            left: 100%;
-        }
-        
-        .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(64, 224, 255, 0.5);
-            text-decoration: none;
-            color: #1a1a1a;
-        }
-        
-        .cta-button.secondary {
-            background: linear-gradient(45deg, #424242, #616161);
-            color: #e0e0e0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-        
-        .cta-button.secondary:hover {
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-            color: #e0e0e0;
-        }
-        
-        .footer {
-            text-align: center;
-            margin-top: 4rem;
-            color: #888;
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-        
-        .tech-specs {
-            background: rgba(26, 26, 26, 0.8);
-            border: 1px solid rgba(64, 224, 255, 0.2);
-            border-radius: 15px;
-            padding: 2rem;
-            margin-top: 2rem;
-            backdrop-filter: blur(10px);
-        }
-        
-        .tech-specs h3 {
-            color: #40e0ff;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            font-size: 1.3rem;
-        }
-        
-        .tech-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            list-style: none;
-            padding: 0;
-        }
-        
-        .tech-list li {
-            background: rgba(66, 66, 66, 0.5);
-            padding: 0.8rem 1rem;
-            border-radius: 8px;
-            color: #cccccc;
-            border-left: 3px solid #66bb6a;
-            transition: all 0.3s ease;
-        }
-        
-        .tech-list li:hover {
-            transform: translateX(5px);
-            background: rgba(102, 187, 106, 0.1);
-        }
-        
-        @media (max-width: 768px) {
-            .container { padding: 1rem; }
-            .header h1 { font-size: 2.5rem; }
-            .header .subtitle { font-size: 1.2rem; }
-            .features-grid { grid-template-columns: 1fr; }
-            .button-group { flex-direction: column; align-items: center; }
-            .main-content { padding: 2rem; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Web1CAD</h1>
-            <p class="subtitle">Advanced 2D Computer-Aided Design in Your Browser</p>
-            <div class="version-badge">Version 0.250804 Beta</div>
-        </div>
-        
-        <div class="beta-notice">
-            🚀 Beta Version Available - Experience cutting-edge PDF export technology and enhanced drawing capabilities!
-        </div>
-        
-        <div class="main-content">
-            <div class="description">
-                A powerful, browser-based 2D CAD application that brings advanced design tools to your fingertips. 
-                Create precise technical drawings, architectural plans, and engineering diagrams with our comprehensive toolset 
-                and advanced vector PDF export capabilities.
-            </div>
-            
-            <div class="features-grid">
-                <div class="feature">
-                    <h3>Drawing Tools</h3>
-                    <p>Complete set of precision drawing tools including lines, polylines, circles, arcs, ellipses, rectangles, 
-                    polygons, splines, hatch patterns, points, and text. All tools feature snap-to-grid functionality and 
-                    precise coordinate input for accurate technical drawings.</p>
-                </div>
-                
-                <div class="feature pdf-feature">
-                    <h3>Vector PDF Export</h3>
-                    <p>Advanced vector PDF export with area selection, multiple paper formats (A0-A4, Letter, Legal, Tabloid), 
-                    orientation control (portrait/landscape), quality settings, and precise vector graphics preservation. Export specific drawing areas with full control.</p>
-                </div>
-                
-                <div class="feature">
-                    <h3>Real-time Precision</h3>
-                    <p>Dynamic coordinate display, real-time measurements, angle calculations, and distance tools. 
-                    Grid system with customizable spacing and snap-to-grid functionality for precise CAD workflows.</p>
-                </div>
-                
-                <div class="feature">
-                    <h3>Layer Management</h3>
-                    <p>Advanced layer system with visibility control, locking, and color management. Organize complex drawings 
-                    with multiple layers for better project structure and workflow efficiency.</p>
-                </div>
-                
-                <div class="feature">
-                    <h3>Command System</h3>
-                    <p>Powerful command-line interface for coordinate-based object creation. Execute commands like 
-                    'line 0,0 100,100' or 'circle 50,50 25' for precise geometric construction and batch operations.</p>
-                </div>
-                
-                <div class="feature">
-                    <h3>Cross-Platform Compatibility</h3>
-                    <p>Runs seamlessly in any modern web browser across Windows, macOS, and Linux. 
-                    No installation required - access your CAD tools instantly from anywhere with zero setup.</p>
-                </div>
-            </div>
-            
-            <div class="tech-specs">
-                <h3>Technical Specifications</h3>
-                <ul class="tech-list">
-                    <li>HTML5 Canvas Graphics</li>
-                    <li>Vector PDF Export (jsPDF)</li>
-                    <li>Command-Line Interface</li>
-                    <li>Layer Management System</li>
-                    <li>Responsive Design</li>
-                    <li>Cross-Browser Support</li>
-                    <li>Real-time Rendering</li>
-                    <li>Geometric Calculations</li>
-                    <li>Coordinate System</li>
-                    <li>File Import/Export (.wcd, .json)</li>
-                    <li>Undo/Redo Operations</li>
-                    <li>Zero Installation</li>
-                </ul>
-            </div>
-            
-            <div class="button-group">
-                <a href="cad.html" class="cta-button">Launch Web1CAD</a>
-                <a href="README.md" class="cta-button secondary">View Documentation</a>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>&copy; 2025 Web1CAD - Advanced 2D CAD Technology</p>
-        </div>
-    </div>
+# Web1CAD - Advanced 2D CAD System
 
-    <!-- Schema.org structured data for better SEO -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Web1CAD",
-        "description": "Advanced browser-based 2D CAD system with drawing tools, vector PDF export, and real-time precision design capabilities.",
-        "applicationCategory": "DesignApplication",
-        "operatingSystem": "Web Browser",
-        "author": {
-            "@type": "Person",
-            "name": "Developer"
-        },
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-        },
-        "softwareVersion": "Beta 0.250803",
-        "releaseNotes": "Beta version with advanced vector PDF export functionality and enhanced drawing capabilities",
-        "featureList": [
-            "2D CAD drawing tools (line, circle, arc, rectangle, polygon, polyline, ellipse, spline)",
-            "Vector PDF export with area selection and multiple paper formats",
-            "Real-time precision measurements and coordinates",
-            "Layer management system with visibility and locking",
-            "Command-line interface for coordinate-based construction",
-            "Cross-platform browser compatibility",
-            "File import/export (.wcd, .json formats)",
-            "HTML5 Canvas rendering",
-            "Zero installation required"
-        ]
-    }
-    </script>
-</body>
-</html>
+**Version 0.250804** | **Release Date**: August 4, 2025
+
+A powerful browser-based 2D CAD system developed by Oleh Korobkov.
+
+## 🚀 Features
+
+### Core CAD Functionality
+- **Drawing Tools**: Line, Polyline, Circle, Ellipse, Arc, Rectangle, Polygon, Spline, Hatch, Point, Text
+- **Vector PDF Export**: Advanced area selection with multiple paper formats (A0-A4, Letter, Legal, Tabloid)
+- **Layer Management**: Layer system with visibility control, locking, and color management
+- **Command Interface**: Command-line system for coordinate-based object creation
+- **File Operations**: Save/load projects (.wcd, .json formats) with import/export functionality
+
+### Advanced Features
+- **Vector PDF Export**: Export selected areas to PDF with true vector graphics preservation
+  - Multiple paper formats: A0, A1, A2, A3, A4, Letter, Legal, Tabloid
+  - Portrait and landscape orientation support
+  - Quality settings and margin controls
+- **Coordinate Commands**: Create objects with precise coordinates
+  - `line 0,0 100,100` - Create line from point to point
+  - `circle 50,50 25` - Create circle at center with radius
+  - `arc 0,0 100,100 90` - Create arc with two points and sweep angle
+  - `rectangle 10,10 50,30` - Create rectangle with precise dimensions
+- **Real-time Precision**: Dynamic coordinate display, measurements, and calculations
+- **Cross-Platform**: Runs in any modern web browser with zero installation
+
+### Technical Highlights
+- **HTML5 Canvas**: High-performance graphics rendering
+- **Vector PDF Export**: True vector graphics with jsPDF library
+- **Modular Architecture**: Organized codebase with separate modules
+- **Command System**: Regex-based parsing and validation
+- **Layer Management**: Advanced layer system with full control
+- **Responsive Design**: Works on desktop and mobile devices
+
+## 🛠️ Installation & Usage
+
+### Quick Start
+1. Open `index.html` in a web browser for project information
+2. Click "Launch Web1CAD" or open `cad.html` directly
+3. Use toolbar buttons for drawing tools
+4. Use command input for precise coordinate-based construction
+5. Export drawings to PDF using the area selection tool
+
+### Command Examples
+```
+line 0,0 100,100          # Draw line from (0,0) to (100,100)
+circle 50,50 25           # Circle at center (50,50) with radius 25
+arc 0,0 100,0 90          # Arc from (0,0) to (100,0) with 90° sweep
+rectangle 10,10 50,30     # Rectangle at (10,10) with size 50x30
+```
+
+### Building
+```bash
+./build.sh               # Build production version
+./release.sh             # Create release package
+```
+
+## 📁 Project Structure
+
+```
+Web1CAD ver.0.250803/
+├── index.html           # Landing page
+├── cad.html            # Main CAD application
+├── icon.png            # Application icon
+├── css/style.css       # Application styling
+├── js/
+│   ├── cad.js          # Core CAD engine
+│   ├── command-system.js # Command processor
+│   ├── geometry-utils.js # Geometric calculations
+│   ├── shape-renderer.js # Shape rendering engine
+│   ├── jspdf.min.js    # PDF export library
+│   └── [other modules] # Additional functionality
+├── build.sh            # Build script
+├── release.sh          # Release packaging
+└── build/              # Production build output
+```
+
+## 🔧 Development
+
+### Architecture
+- **Modular Design**: Separate files for different functionality
+- **Canvas-based**: HTML5 Canvas for high-performance graphics
+- **Command Pattern**: Unified command processing system
+- **Layer System**: Advanced layer management with visibility control
+- **Vector Graphics**: True vector PDF export capabilities
+
+### Code Quality
+- **Modern JavaScript**: ES6+ features and best practices
+- **Maintainable**: Clear structure and documentation
+- **Responsive**: Works across different screen sizes
+- **Cross-browser**: Compatible with all modern browsers
+- **Performance**: Optimized rendering and calculations
+
+## 📋 Version Information
+
+**Current Version**: 0.250804 (August 4, 2025)
+- Advanced vector PDF export with area selection
+- Multiple paper format support (A0-A4, Letter, Legal, Tabloid)
+- Enhanced layer management system
+- Improved command interface
+- Cross-platform browser compatibility
+- Real-time precision tools and measurements
+
+## 💻 System Requirements
+
+### **Browser Requirements (Primary Platform)**
+
+#### **Minimum Browser Versions**
+- **Chrome/Chromium**: Version 80+ (2020)
+- **Firefox**: Version 75+ (2020)
+- **Safari**: Version 13+ (macOS 10.15+)
+- **Edge**: Version 80+ (Chromium-based)
+
+#### **Required Browser Features**
+- **HTML5 Canvas**: 2D rendering context support
+- **ES6+ JavaScript**: Modern JavaScript features (classes, arrow functions, modules)
+- **File API**: Local file reading/writing capabilities
+- **Canvas 2D Context**: Advanced drawing operations
+- **Performance API**: Memory monitoring (optional but recommended)
+
+### **Hardware Requirements**
+
+#### **Minimum System Specifications**
+- **CPU**: Dual-core processor, 1.8 GHz+
+- **RAM**: 4 GB system memory
+- **Available RAM for Browser**: 2 GB minimum
+- **Graphics**: Integrated graphics with Canvas 2D support
+- **Storage**: 50 MB free disk space (for cached files)
+- **Display**: 1024×768 resolution
+
+#### **Recommended System Specifications**
+- **CPU**: Quad-core processor, 2.4 GHz+
+- **RAM**: 8 GB+ system memory
+- **Available RAM for Browser**: 4 GB+ allocated to browser
+- **Graphics**: Dedicated GPU recommended for large drawings
+- **Storage**: 500 MB+ free disk space
+- **Display**: 1920×1080+ resolution (Full HD or higher)
+
+### **Memory Requirements**
+
+#### **JavaScript Heap Memory**
+- **Minimum**: 256 MB available heap
+- **Recommended**: 512 MB+ available heap
+- **Large Projects**: 1 GB+ heap for complex drawings
+
+#### **Browser Memory Allocation**
+- **Base Application**: ~50-100 MB
+- **Per 1000 Shapes**: ~10-20 MB additional
+- **PDF Export**: ~50-200 MB temporary (depends on area size)
+- **Undo System**: ~5-50 MB (50 undo steps × average complexity)
+
+### **Performance Specifications**
+
+#### **Canvas Performance**
+- **Maximum Canvas Size**: 32,767 × 32,767 pixels (browser limitation)
+- **Optimal Canvas Size**: 2048 × 2048 pixels for smooth performance
+- **Shape Limits**: 10,000+ shapes with good performance
+- **Rendering**: 60 FPS target with viewport culling
+
+#### **Memory Monitoring**
+- Real-time heap usage tracking (Chrome DevTools compatible)
+- Automatic garbage collection optimization
+- Object pooling for frequently created/destroyed objects
+- Memory leak prevention systems
+
+### **Technical Implementation Details**
+
+#### **Graphics Engine**
+- **Rendering**: HTML5 Canvas 2D Context
+- **Coordinate System**: Cartesian coordinates with zoom/pan
+- **Precision**: Floating-point coordinates with sub-pixel accuracy
+- **Grid System**: Dynamic grid scaling (4-500 units, adaptive)
+- **Zoom Range**: 0.001× to 1000× magnification
+
+#### **Performance Optimizations**
+- **Viewport Culling**: Only render visible shapes
+- **Layer Caching**: Cache layer contents for faster redraw
+- **Spatial Indexing**: Efficient shape selection and collision detection
+- **RequestAnimationFrame**: Smooth animation and interaction
+- **Memory Pooling**: Reuse objects to reduce garbage collection
+
+#### **File Format Support**
+- **Native Format**: .wcd (Web1CAD Document)
+- **Export Formats**: PDF (vector), JSON
+- **Import Formats**: .wcd, .json
+- **PDF Export**: jsPDF library, true vector graphics
+
+### **Network Requirements**
+- **Initial Load**: Internet connection for first-time access
+- **Operation**: Fully offline capable after initial load
+- **File Size**: ~2-5 MB total application size
+- **No Server Required**: Purely client-side application
+
+### **Operating System Compatibility**
+
+#### **Desktop Platforms**
+- **Windows**: Windows 10/11 (Chrome, Firefox, Edge)
+- **macOS**: macOS 10.15+ (Safari, Chrome, Firefox)
+- **Linux**: Ubuntu 18.04+, other modern distributions (Chrome, Firefox)
+
+#### **Mobile Platforms (Limited Support)**
+- **iOS**: Safari on iOS 13+ (basic functionality)
+- **Android**: Chrome on Android 8+ (basic functionality)
+- **Note**: Touch interface limitations for precision CAD work
+
+### **Development/Power User Requirements**
+- **Browser DevTools**: Chrome DevTools recommended for debugging
+- **Console Access**: For advanced command usage and troubleshooting
+- **Local File System**: For save/load functionality (or server setup)
+
+### **Recommended Development Environment**
+- **Browser**: Chrome/Chromium with DevTools
+- **Extensions**: Ad blockers may interfere (disable if issues occur)
+- **Security**: Local file access permissions required
+- **Performance**: Hardware acceleration enabled in browser
+
+## 📄 License
+
+© 2025 Oleh Korobkov. All rights reserved.
+
+This software is proprietary and confidential. Unauthorized use, reproduction, or distribution is strictly prohibited.
+
+## 🔗 Links
+
+- **Project**: Web1CAD Advanced 2D CAD System
+- **Developer**: Oleh Korobkov
+- **Version**: 0.250804
+- **Release Date**: August 4, 2025
+- **Features**: Vector PDF Export, Layer Management, Command Interface
