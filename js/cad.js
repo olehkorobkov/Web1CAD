@@ -1300,8 +1300,8 @@ function setLayerLinetype(layerName, linetype) {
  * @returns {Object} Layer object or Default layer
  */
 function getShapeLayer(shape) {
-    const layerName = shape.layer || 'Default';
-    return layers.find(l => l.name === layerName) || layers.find(l => l.name === 'Default');
+    const layerName = shape.layer || '0';
+    return layers.find(l => l.name === layerName) || layers.find(l => l.name === '0');
 }
 
 /**
@@ -7003,6 +7003,7 @@ window.setCurrentLineweight = setCurrentLineweight;
 window.toggleLineweightDisplay = toggleLineweightDisplay;
 window.promptNewLayer = promptNewLayer;
 window.openColorPalette = openColorPalette;
+window.getShapeLayer = getShapeLayer; // Make layer resolution available globally
 
 // Make layer functions globally accessible
 window.toggleLayerPanel = toggleLayerPanel;
@@ -8331,18 +8332,18 @@ function generateSplinePoints(controlPoints, segmentsPerSpan) {
 // Helper functions for vector PDF export
 function resolveShapeColor(shape, layer) {
     // Return shape color or layer color
-    if (shape.color && shape.color !== 'ByLayer') {
+    if (shape.color && shape.color !== 'ByLayer' && shape.color !== 'byLayer') {
         return shape.color;
     }
     if (layer && layer.color) {
         return layer.color;
     }
-    return currentColor || '#ffffff'; // Default to white/current color
+    return currentColor && currentColor !== 'byLayer' ? currentColor : '#ffffff'; // Default to white/current color
 }
 
 function resolveShapeLineWeight(shape, layer) {
     // Return shape lineweight or layer lineweight
-    if (shape.lineWeight && shape.lineWeight !== 'ByLayer') {
+    if (shape.lineWeight && shape.lineWeight !== 'ByLayer' && shape.lineWeight !== 'byLayer') {
         return shape.lineWeight;
     }
     if (layer && layer.lineWeight) {
