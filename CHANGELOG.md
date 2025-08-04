@@ -1,5 +1,31 @@
 # Web1CAD Changelog
 
+## Version 0.250804 - August 4, 2025
+
+### 📋 Documentation & Technical Updates
+- **Comprehensive System Requirements**: Added detailed technical specifications
+- **Browser Compatibility**: Detailed minimum and recommended browser versions
+- **Hardware Requirements**: CPU, RAM, graphics, and storage specifications
+- **Memory Requirements**: JavaScript heap and browser allocation details
+- **Performance Specifications**: Canvas performance and optimization details
+- **Technical Implementation**: Graphics engine and performance optimization info
+
+### 📄 New Documentation Files
+- **SYSTEM_REQUIREMENTS.md**: Standalone technical requirements document
+- **Enhanced README.md**: Integrated system requirements into main documentation
+- **Updated VERSION.md**: Current version information and history
+
+### 🎨 Interface Updates
+- **Removed "NEW" highlighting**: Cleaned up feature descriptions on landing page
+- **Updated version numbers**: Consistent v0.250804 across all files
+- **Improved descriptions**: More professional feature presentation
+
+### 🛠️ Technical Documentation
+- **Memory Monitoring**: Detailed memory usage tracking specifications
+- **Browser Support**: Specific version requirements for Chrome, Firefox, Safari, Edge
+- **Performance Benchmarks**: Typical performance metrics and stress test scenarios
+- **Operating System**: Desktop and mobile platform compatibility details
+
 ## Version 0.250803 - August 3, 2025
 
 ### 🚀 Major Features Added
