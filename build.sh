@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Build script for Web1CAD Professional - Version 0.250803 Beta
+# Build script for Web1CAD Professional - Version 0.250804 Beta
 # © 2024 Web1CAD Professional - Advanced 2D CAD Technology
 
-VERSION="0.250803"
+VERSION="0.250804"
 BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 echo "🔧 Building Web1CAD Professional Version $VERSION Beta..."
@@ -38,6 +38,7 @@ cp README.md build/
 cp LICENSE build/
 cp VERSION.md build/
 cp CHANGELOG.md build/
+cp SYSTEM_REQUIREMENTS.md build/
 
 echo "📊 Creating build info..."
 
