@@ -17,11 +17,12 @@
  */
 function resolveShapeColor(shape, layer) {
     let shapeColor = shape.color;
-    if (!shapeColor || shapeColor === 'byLayer') {
+    // Handle both "byLayer" string and 'byLayer' comparison - normalize to check
+    if (!shapeColor || shapeColor === 'byLayer' || shapeColor === 'ByLayer') {
         shapeColor = layer ? layer.color : '#ffffff';
     }
     if (!shapeColor) {
-        shapeColor = currentColor || '#ffffff';
+        shapeColor = currentColor && currentColor !== 'byLayer' ? currentColor : '#ffffff';
     }
     return shapeColor;
 }
@@ -34,7 +35,7 @@ function resolveShapeColor(shape, layer) {
  */
 function resolveShapeLineweight(shape, layer) {
     let effectiveLineweight = shape.lineWeight || shape.lineweight; // Check both naming conventions
-    if (effectiveLineweight === 'byLayer' || effectiveLineweight === undefined) {
+    if (effectiveLineweight === 'byLayer' || effectiveLineweight === 'ByLayer' || effectiveLineweight === undefined) {
         effectiveLineweight = layer ? layer.lineWeight : 0.25;
     }
     return effectiveLineweight;
@@ -48,7 +49,7 @@ function resolveShapeLineweight(shape, layer) {
  */
 function resolveShapeLinetype(shape, layer) {
     let effectiveLinetype = shape.linetype;
-    if (effectiveLinetype === 'byLayer' || effectiveLinetype === undefined) {
+    if (effectiveLinetype === 'byLayer' || effectiveLinetype === 'ByLayer' || effectiveLinetype === undefined) {
         effectiveLinetype = layer ? layer.linetype : 'continuous';
     }
     return effectiveLinetype;
