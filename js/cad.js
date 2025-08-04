@@ -4301,12 +4301,15 @@ function _redraw() {
 
     // Draw previews
     if (mode === 'line' && isDrawing && startX !== undefined && startY !== undefined && previewX !== undefined && previewY !== undefined) {
+        // NEW LINE PREVIEW - Restored with improved styling
         ctx.strokeStyle = '#0ff';
         ctx.lineWidth = 1 / zoom;
+        ctx.setLineDash([3 / zoom, 3 / zoom]); // Dashed line for preview
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(previewX, previewY);
         ctx.stroke();
+        ctx.setLineDash([]); // Reset dash
     } else if (mode === 'polyline' && polylinePoints.length > 0 && polylinePreviewActive) {
         ctx.strokeStyle = '#0ff';
         ctx.lineWidth = 1 / zoom;
@@ -4872,23 +4875,45 @@ function handleSelectMode(x, y, e) {
 }
 
 function handleLineMode(x, y, e) {
+    // NEW IMPROVED LINE MODE - Based on polyline logic
     if (!isDrawing) {
+        // First click - set start point
         [startX, startY] = [x, y];
         isDrawing = true;
+        
+        // Set default direction for length input (horizontal)
+        lineDirection = { x: 1, y: 0 };
+        
+        // Show length input immediately like in polyline mode
         showLengthInput(e.offsetX, e.offsetY);
+        
         updateHelpBar('Step 2/2: Click end point, type length + Enter, or use Escape to cancel');
         addToHistory(`Line started at (${x.toFixed(2)}, ${y.toFixed(2)}) - Enter length or click end point`);
     } else {
-        // If length input is active, hide it and create line at cursor position
+        // Second click - create line
+        // Always hide length input when adding point via click
         if (isLengthInputActive) {
             hideLengthInput();
         }
         
         [x, y] = applyOrtho(x, y, startX, startY);
+        
+        // NEW LINE CREATION - Based on polyline logic
         addShape(createShapeWithProperties({ type: 'line', x1: startX, y1: startY, x2: x, y2: y }));
         isDrawing = false;
-        setMode('select');
+        
+        // Show success message and return to select mode
         addToHistory(`Line created from (${startX.toFixed(2)}, ${startY.toFixed(2)}) to (${x.toFixed(2)}, ${y.toFixed(2)})`);
+        updateHelpBar('Line completed! Select another tool or object.');
+        setMode('select');
+        
+        // Reset help bar to default after 3 seconds (like polyline)
+        setTimeout(() => {
+            if (mode === 'select') {
+                updateHelpBar('Selection mode (default) - Click objects to select, drag to select area');
+            }
+        }, 3000);
+        
         redraw();
     }
 }
@@ -6304,18 +6329,19 @@ function setLengthInputValue(value) {
 
 function handleLengthInput(length) {
     if (mode === 'line' && isDrawing && length > 0) {
-        // Calculate end point based on direction and length
+        // Calculate end point based on direction and length - NEW IMPROVED LOGIC
         const angle = Math.atan2(lineDirection.y, lineDirection.x);
         const endX = startX + length * Math.cos(angle);
         const endY = startY + length * Math.sin(angle);
         
-        // Create the line
+        // Create the line with new logic
         addShape(createShapeWithProperties({ type: 'line', x1: startX, y1: startY, x2: endX, y2: endY }));
         
         // Reset state
         isDrawing = false;
         hideLengthInput();
         updateHelpBar(`Line created! Length: ${length.toFixed(2)} units. Click for next line or select another tool.`);
+        setMode('select');
         redraw();
         
         addToHistory(`Line created with length ${length.toFixed(2)} at angle ${(angle * 180 / Math.PI).toFixed(1)}deg`);
