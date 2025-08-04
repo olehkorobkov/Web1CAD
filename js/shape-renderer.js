@@ -206,6 +206,7 @@ function renderStandardShapes(ctx, shape, zoom, shapeIndex) {
     // Fallback to original implementation for compatibility
     switch(shape.type) {
         case 'line':
+            // NEW LINE RENDERING - Restored and improved
             ctx.beginPath();
             ctx.moveTo(shape.x1, shape.y1);
             ctx.lineTo(shape.x2, shape.y2);
@@ -438,6 +439,7 @@ function drawSelectionHighlight(ctx, shape, zoom) {
     // Draw the actual shape outline for proper highlighting
     switch(shape.type) {
         case 'line':
+            // NEW LINE HIGHLIGHT - Restored selection highlighting
             ctx.beginPath();
             ctx.moveTo(shape.x1, shape.y1);
             ctx.lineTo(shape.x2, shape.y2);
@@ -540,7 +542,14 @@ function drawSelectionHighlight(ctx, shape, zoom) {
 // Helper function to draw different types of handles
 function drawHandle(x, y, type = 'default', handleSize = 4) {
     const ctx = arguments[4] || window.currentRenderContext; // Get context from global or parameter
+    const zoom = arguments[5] || 1; // Get zoom from parameter or default
     if (!ctx) return;
+    
+    // FIXED: Calculate proper handle size based on screen pixels, not world units
+    const screenHandleSize = 6 / zoom; // 6 pixels on screen
+    const minSize = 3 / zoom;
+    const maxSize = 12 / zoom;
+    const finalSize = Math.max(minSize, Math.min(maxSize, screenHandleSize));
     
     switch(type) {
         case 'endpoint':
@@ -564,12 +573,12 @@ function drawHandle(x, y, type = 'default', handleSize = 4) {
             ctx.strokeStyle = '#000000';
     }
     
-    ctx.lineWidth = 1 / (arguments[5] || 1); // Get zoom from parameter or default
+    ctx.lineWidth = 1 / zoom;
     
     if (type === 'midpoint') {
         // Draw circle
         ctx.beginPath();
-        ctx.arc(x, y, handleSize/2, 0, 2 * Math.PI);
+        ctx.arc(x, y, finalSize/2, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
     } else if (type === 'center') {
@@ -577,13 +586,13 @@ function drawHandle(x, y, type = 'default', handleSize = 4) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(Math.PI / 4);
-        ctx.fillRect(-handleSize/2, -handleSize/2, handleSize, handleSize);
-        ctx.strokeRect(-handleSize/2, -handleSize/2, handleSize, handleSize);
+        ctx.fillRect(-finalSize/2, -finalSize/2, finalSize, finalSize);
+        ctx.strokeRect(-finalSize/2, -finalSize/2, finalSize, finalSize);
         ctx.restore();
     } else {
         // Draw square
-        ctx.fillRect(x - handleSize/2, y - handleSize/2, handleSize, handleSize);
-        ctx.strokeRect(x - handleSize/2, y - handleSize/2, handleSize, handleSize);
+        ctx.fillRect(x - finalSize/2, y - finalSize/2, finalSize, finalSize);
+        ctx.strokeRect(x - finalSize/2, y - finalSize/2, finalSize, finalSize);
     }
 }
 
@@ -609,7 +618,11 @@ function drawSelectionHandles(ctx, shape, zoom) {
     }
     
     // Fallback to original implementation for compatibility
-    const handleSize = 4 / zoom;
+    // FIXED: Handle size should be constant screen pixels, not world units
+    const handleSize = 6 / zoom; // 6 pixels on screen, independent of zoom level
+    const minHandleSize = 3 / zoom; // Minimum 3 pixels
+    const maxHandleSize = 12 / zoom; // Maximum 12 pixels
+    const finalHandleSize = Math.max(minHandleSize, Math.min(maxHandleSize, handleSize));
     
     // Helper function to draw different types of handles
     function drawHandleLocal(x, y, type = 'default') {
@@ -640,7 +653,7 @@ function drawSelectionHandles(ctx, shape, zoom) {
         if (type === 'midpoint') {
             // Draw circle
             ctx.beginPath();
-            ctx.arc(x, y, handleSize/2, 0, 2 * Math.PI);
+            ctx.arc(x, y, finalHandleSize/2, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
         } else if (type === 'center') {
@@ -648,18 +661,19 @@ function drawSelectionHandles(ctx, shape, zoom) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(Math.PI / 4);
-            ctx.fillRect(-handleSize/2, -handleSize/2, handleSize, handleSize);
-            ctx.strokeRect(-handleSize/2, -handleSize/2, handleSize, handleSize);
+            ctx.fillRect(-finalHandleSize/2, -finalHandleSize/2, finalHandleSize, finalHandleSize);
+            ctx.strokeRect(-finalHandleSize/2, -finalHandleSize/2, finalHandleSize, finalHandleSize);
             ctx.restore();
         } else {
             // Draw square
-            ctx.fillRect(x - handleSize/2, y - handleSize/2, handleSize, handleSize);
-            ctx.strokeRect(x - handleSize/2, y - handleSize/2, handleSize, handleSize);
+            ctx.fillRect(x - finalHandleSize/2, y - finalHandleSize/2, finalHandleSize, finalHandleSize);
+            ctx.strokeRect(x - finalHandleSize/2, y - finalHandleSize/2, finalHandleSize, finalHandleSize);
         }
     }
     
     switch(shape.type) {
         case 'line':
+            // NEW LINE HANDLES - Restored with improved positioning
             drawHandleLocal(shape.x1, shape.y1, 'endpoint');
             drawHandleLocal(shape.x2, shape.y2, 'endpoint');
             // Add midpoint grip
