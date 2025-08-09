@@ -1,7 +1,7 @@
 /*
  * ========================================
  * Web1CAD - Professional 2D CAD System
- * Version 0.250803 Beta (August 3, 2025)
+ * Version 0.250808 Beta (August 8, 2025) - TEXT EDITING UPDATE
  * ========================================
  * Developed by Oleh Korobkov
  * © 2025 Oleh Korobkov. All rights reserved.
@@ -125,12 +125,10 @@ function saveState(operationName = 'Unknown Operation') {
     updateUndoRedoButtons();
     
     // Optional: Log state changes for debugging
-    // console.log(`State saved: ${operationName} (${state.shapes.length} objects)`);
 }
 
 function undo() {
     // Optional: Log undo operations for debugging
-    // console.log('Undo called. Stack length:', undoStack.length);
     
     if (undoStack.length === 0) {
         addToHistory('Nothing to undo', 'warning');
@@ -189,7 +187,6 @@ function undo() {
 
 function redo() {
     // Optional: Log redo operations for debugging
-    // console.log('Redo called. Stack length:', redoStack.length);
     
     if (redoStack.length === 0) {
         addToHistory('Nothing to redo', 'warning');
@@ -295,10 +292,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const lwtBtn = document.getElementById('lwtBtn');
     if (lwtBtn) {
         lwtBtn.classList.toggle('active', showLineweights);
-        lwtBtn.style.backgroundColor = showLineweights ? '#4CAF50' : '';
     }
     
-    // Initialize lineweight selector to ByLayer (AutoCAD default)
+    // Initialize grid button state
+    updateButton('gridBtn', showGrid);
+    
+    // Initialize other button states
+    updateButton('orthoBtn', orthoMode);
+    updateButton('snapBtn', snapEnabled);
+    updateButton('osnapBtn', objectSnapEnabled);
+    
+    // Initialize lineweight selector to ByLayer (CAD standard default)
     setCurrentLineweight('byLayer');
     updateLineweightDisplay();
     
@@ -448,9 +452,6 @@ const textInputOverlay = document.getElementById('textInputOverlay');
 const textInput = document.getElementById('textInput');
 const lengthInputOverlay = document.getElementById('lengthInput');
 const lengthInput = document.getElementById('lengthValue');
-const polygonRadiusTypeSelector = document.getElementById('polygonRadiusTypeSelector');
-const polygonInscribedBtn = document.getElementById('polygonInscribedBtn');
-const polygonCircumscribedBtn = document.getElementById('polygonCircumscribedBtn');
 
 let mode = 'select'; // Default to select mode
 let isDrawing = false;
@@ -459,6 +460,7 @@ let previewX = 0, previewY = 0;
 let currentMouseX = 0, currentMouseY = 0; // Track current mouse position
 let shapes = [];
 let selectedShapes = new Set();
+let hoveredShape = null; // DISABLED: Hover highlighting removed per user request
 
 // Editing state variables
 let copiedShapes = []; // Store copied shapes
@@ -501,21 +503,15 @@ let arcPoints = []; // Will store start point, end point
 let arcDrawingStep = 0; // 0: waiting for start, 1: waiting for end, 2: waiting for angle
 let arcPreviewActive = false;
 
-let rectangleWidth = 0;
-let rectangleHeight = 0;
-let rectangleStep = 0; // 0: first point, 1: second point/width, 2: height, 3: rotation
+let rectangleStep = 0; // 0: first corner, 1: opposite corner (CAD standard style)
 let rectangleStartX = 0;
 let rectangleStartY = 0;
-let rectangleEndX = 0;
-let rectangleEndY = 0;
-let rectangleAngle = 0;
 let polygonSides = 5;
 let polygonRadius = 0;
 let polygonAngle = 0; // Rotation angle in radians
 let polygonStep = 0; // 0: waiting for center, 1: asking for sides, 2: asking for radius type, 3: setting radius and rotation
 let polygonCenterX = 0;
 let polygonCenterY = 0;
-let polygonRadiusType = 'inscribed'; // 'inscribed' or 'circumscribed'
 let splinePoints = [];
 let splinePreviewActive = false;
 let splineStep = 0; // 0 = waiting for points, 1 = show preview
@@ -532,7 +528,7 @@ let orthoMode = false;
 let snapEnabled = false;
 let objectSnapEnabled = false;
 
-let zoom = 1;
+let zoom = 3.7; // Default zoom for realistic millimeter scale
 let offsetX = 0;
 let offsetY = 0;
 let isPanning = false;
@@ -542,7 +538,7 @@ let moveStartX = 0, moveStartY = 0;
 
 let snapMarker = null;
 
-// Layer management - Enhanced AutoCAD-like system
+// Layer management - Enhanced CAD-like system
 let currentLayer = "0";
 let currentColor = "byLayer";
 let currentLineWeight = "byLayer"; // Current drawing lineweight
@@ -559,7 +555,7 @@ let areaToPdfStep = 0; // 0: waiting for first corner, 1: waiting for second cor
 let areaToPdfBlinkState = true; // For blinking animation
 let areaToPdfBlinkTimer = null;
 
-// AutoCAD LT standard lineweight values (in millimeters)
+// CAD standard lineweight values (in millimeters)
 const LINEWEIGHT_VALUES = [
     { value: 'byLayer', label: 'ByLayer' },
     { value: 0.00, label: '0.00 mm' },
@@ -577,8 +573,8 @@ const LINEWEIGHT_VALUES = [
     { value: 2.00, label: '2.00 mm' }
 ];
 
-// Lineweight display toggle (like AutoCAD's LWT button)
-let showLineweights = true;
+// Lineweight display toggle (like professional CAD LWT button) - default OFF
+let showLineweights = false;
 
 // Essential CAD line types with distinct, visible patterns
 const LINETYPE_PATTERNS = {
@@ -1345,7 +1341,6 @@ function updateLayerSelector() {
  * Update the layer management panel
  */
 
-
 /**
  * Update color display in UI
  */
@@ -1512,8 +1507,8 @@ function updateMinimalLayerPanel() {
 // Function to zoom to fit all objects - OPTIMIZED with Unified Shape Handler
 function zoomToFit() {
     if (shapes.length === 0) {
-        // If no shapes, reset to default view
-        zoom = 1;
+        // If no shapes, reset to default view with realistic scale
+        zoom = 3.7;
         offsetX = 0;
         offsetY = 0;
         return;
@@ -1803,11 +1798,12 @@ function calculateShapeArea(shape) {
                 Math.pow(lastPoint.y - firstPoint.y, 2)
             );
             
-            // Consider closed if distance between first and last point is less than 1 unit
-            if (distance < 1.0) {
+            // Consider closed if distance between first and last point is less than 0.1 unit
+            if (distance < 0.1) {
                 let polylineArea = 0;
-                for (let i = 0; i < shape.points.length - 1; i++) {
-                    const j = (i + 1) % (shape.points.length - 1);
+                // Use shoelace formula for all points including the closing segment
+                for (let i = 0; i < shape.points.length; i++) {
+                    const j = (i + 1) % shape.points.length;
                     polylineArea += shape.points[i].x * shape.points[j].y;
                     polylineArea -= shape.points[j].x * shape.points[i].y;
                 }
@@ -2117,6 +2113,52 @@ function generateSingleObjectProperties(shape, index) {
             break;
             
         case 'polyline':
+            // Show if this is actually a polygon
+            if (shape.isPolygon) {
+                html += `<div class="property-row">
+                    <div class="property-label">Object Type:</div>
+                    <div class="property-value">
+                        <input type="text" class="property-readonly" value="Polygon (as Polyline)" readonly>
+                    </div>
+                </div>`;
+                html += `<div class="property-row">
+                    <div class="property-label">Sides:</div>
+                    <div class="property-value">
+                        <input type="text" class="property-readonly" value="${shape.polygonSides || 'N/A'}" readonly>
+                    </div>
+                </div>`;
+                if (shape.polygonRadius) {
+                    html += `<div class="property-row">
+                        <div class="property-label">Radius:</div>
+                        <div class="property-value">
+                            <input type="text" class="property-readonly" value="${shape.polygonRadius.toFixed(2)}" readonly>
+                        </div>
+                    </div>`;
+                }
+                if (shape.polygonRadiusType) {
+                    html += `<div class="property-row">
+                        <div class="property-label">Radius Type:</div>
+                        <div class="property-value">
+                            <input type="text" class="property-readonly" value="${shape.polygonRadiusType}" readonly>
+                        </div>
+                    </div>`;
+                }
+                if (shape.polygonCenter) {
+                    html += `<div class="property-row">
+                        <div class="property-label">Center X:</div>
+                        <div class="property-value">
+                            <input type="text" class="property-readonly" value="${shape.polygonCenter.x.toFixed(2)}" readonly>
+                        </div>
+                    </div>`;
+                    html += `<div class="property-row">
+                        <div class="property-label">Center Y:</div>
+                        <div class="property-value">
+                            <input type="text" class="property-readonly" value="${shape.polygonCenter.y.toFixed(2)}" readonly>
+                        </div>
+                    </div>`;
+                }
+            }
+            
             html += `<div class="property-row">
                 <div class="property-label">Vertices:</div>
                 <div class="property-value">
@@ -2586,7 +2628,6 @@ function setMode(m) {
         'ellipse': 'div[onclick="setMode(\'ellipse\')"]',
         'arc': 'div[onclick="setMode(\'arc\')"]',
         'rectangle': 'div[onclick="setMode(\'rectangle\')"]',
-        'polygon': 'div[onclick="setMode(\'polygon\')"]',
         'spline': 'div[onclick="setMode(\'spline\')"]',
         'hatch': 'div[onclick="setMode(\'hatch\')"]',
         'point': 'div[onclick="setMode(\'point\')"]',
@@ -2594,7 +2635,16 @@ function setMode(m) {
         'area_to_pdf': 'div[onclick="setMode(\'area_to_pdf\')"]'
     };
     
-    if (toolButtons[m]) {
+    // Special handling for polygon mode - highlight the appropriate polygon button
+    if (m === 'polygon') {
+        if (polygonRadiusType === 'inscribed') {
+            const inscribedBtn = document.querySelector('div[onclick="setPolygonMode(\'inscribed\')"]');
+            if (inscribedBtn) inscribedBtn.classList.add('active');
+        } else {
+            const circumscribedBtn = document.querySelector('div[onclick="setPolygonMode(\'circumscribed\')"]');
+            if (circumscribedBtn) circumscribedBtn.classList.add('active');
+        }
+    } else if (toolButtons[m]) {
         const activeButton = document.querySelector(toolButtons[m]);
         if (activeButton) {
             activeButton.classList.add('active');
@@ -2661,7 +2711,7 @@ function setMode(m) {
         'circle': 'Step 1/2: Click center point for circle',
         'ellipse': 'Step 1/3: Click center point for ellipse',
         'arc': 'Step 1/3: Click start point for arc',
-        'rectangle': 'Step 1/3: Click first corner for rectangle',
+        'rectangle': 'Specify first corner point:',
         'polygon': 'Step 1/4: Click center point for polygon',
         'spline': 'Step 1/?: Click first point for spline (use double-click or Escape to finish)',
         'hatch': 'Click points to define hatch boundary',
@@ -3213,6 +3263,27 @@ function getSelectionBounds(selection) {
     return { minX, minY, maxX, maxY };
 }
 
+/**
+ * Converts white color to black for better visibility on white background
+ * (CAD-style logic)
+ */
+function convertWhiteToBlackForPreview(color) {
+    if (!color) return '#000000'; // Default to black
+    
+    const normalizedColor = color.toLowerCase();
+    
+    // Convert white color to black
+    if (normalizedColor === '#ffffff' || normalizedColor === '#fff' || 
+        normalizedColor === 'white' || normalizedColor === 'rgb(255,255,255)') {
+        return '#000000';
+    }
+    
+    return color; // Keep all other colors as they are
+}
+
+// Make function globally available
+window.convertWhiteToBlackForPreview = convertWhiteToBlackForPreview;
+
 function drawCopyPreview(ctx, shape, dx, dy, zoom) {
     ctx.save();
     
@@ -3226,12 +3297,20 @@ function drawCopyPreview(ctx, shape, dx, dy, zoom) {
     
     moveShape(previewShape, dx, dy);
     
+    // Professional CAD logic: convert white color to black for better visibility
+    if (previewShape.color) {
+        previewShape.color = convertWhiteToBlackForPreview(previewShape.color);
+    }
+    
     // Set preview styling - more transparent and visible
-    ctx.setLineDash([]);
-    ctx.strokeStyle = shape.color || '#ffffff';
-    ctx.fillStyle = shape.color || '#ffffff';
-    ctx.lineWidth = (shape.lineWeight || 1) / zoom;
     ctx.globalAlpha = 0.5; // 50% transparency for floating effect
+    
+    // Use enhanced rendering system if available
+    if (typeof drawShape === 'function') {
+        drawShape(ctx, previewShape, zoom, false);
+        ctx.restore();
+        return;
+    }
     
     // Use optimized unified handler if available
     if (window.shapeHandler) {
@@ -3292,9 +3371,16 @@ function drawCopyPreview(ctx, shape, dx, dy, zoom) {
             ctx.fill();
             break;
         case 'text':
-            // For text, draw the actual text but transparent
+            // FIXED: text as geometric shape for copy preview + Professional CAD color logic
             if (previewShape.content) {
-                ctx.font = `${previewShape.size || 12}px Arial`;
+                const worldSize = previewShape.size || 12; // World units
+                ctx.font = `${worldSize}px Arial`; // Use world size directly
+                
+                // Apply converted color (white → black)
+                if (previewShape.color) {
+                    ctx.fillStyle = previewShape.color;
+                }
+                
                 ctx.fillText(previewShape.content, previewShape.x, previewShape.y);
             }
             break;
@@ -3328,12 +3414,20 @@ function drawMovePreview(ctx, shape, dx, dy, zoom) {
     
     moveShape(previewShape, dx, dy);
     
+    // Professional CAD logic: convert white color to black for better visibility
+    if (previewShape.color) {
+        previewShape.color = convertWhiteToBlackForPreview(previewShape.color);
+    }
+    
     // Set preview styling - more transparent and visible
-    ctx.setLineDash([]);
-    ctx.strokeStyle = shape.color || '#ffffff';
-    ctx.fillStyle = shape.color || '#ffffff';
-    ctx.lineWidth = (shape.lineWeight || 1) / zoom;
     ctx.globalAlpha = 0.5; // 50% transparency for floating effect
+    
+    // Use enhanced rendering system if available
+    if (typeof drawShape === 'function') {
+        drawShape(ctx, previewShape, zoom, false);
+        ctx.restore();
+        return;
+    }
     
     // Use optimized unified handler if available
     if (window.shapeHandler) {
@@ -3394,9 +3488,16 @@ function drawMovePreview(ctx, shape, dx, dy, zoom) {
             ctx.fill();
             break;
         case 'text':
-            // For text, draw the actual text but transparent
+            // FIXED: text as geometric shape for move preview + Professional CAD color logic
             if (previewShape.content) {
-                ctx.font = `${previewShape.size || 12}px Arial`;
+                const worldSize = previewShape.size || 12; // World units
+                ctx.font = `${worldSize}px Arial`; // Use world size directly
+                
+                // Apply converted color (white → black)
+                if (previewShape.color) {
+                    ctx.fillStyle = previewShape.color;
+                }
+                
                 ctx.fillText(previewShape.content, previewShape.x, previewShape.y);
             }
             break;
@@ -3418,7 +3519,25 @@ function drawMovePreview(ctx, shape, dx, dy, zoom) {
 }
 
 function drawShapeOutline(ctx, shape) {
-    // Draw outline around shape for selection highlighting - OPTIMIZED with Unified Shape Handler
+    // Draw outline around shape for selection highlighting using enhanced rendering core
+    
+    // Use enhanced rendering system if available
+    if (typeof drawShape === 'function') {
+        ctx.save();
+        
+        // Force selection styling for outline
+        const originalSelected = shape.selected;
+        shape.selected = true;
+        
+        // Draw with enhanced system (it handles selection highlighting)
+        drawShape(ctx, shape, zoom, true);
+        
+        // Restore original selection state
+        shape.selected = originalSelected;
+        
+        ctx.restore();
+        return;
+    }
     
     // Use optimized unified handler if available
     if (window.shapeHandler) {
@@ -3536,7 +3655,13 @@ function toggleObjectSnap() {
 
 function updateButton(id, state) {
     const el = document.getElementById(id);
-    el.style.background = state ? '#4c6fff' : '#3a3a3a';
+    if (el) {
+        if (state) {
+            el.classList.add('active');
+        } else {
+            el.classList.remove('active');
+        }
+    }
 }
 
 function screenToWorld(x, y) {
@@ -3589,7 +3714,7 @@ function findOsnap(x, y) {
                                 shape.cy + shape.radius * Math.sin(shape.startAngle)],
                             [shape.cx + shape.radius * Math.cos(shape.endAngle),
                                 shape.cy + shape.radius * Math.sin(shape.endAngle)]]
-                            : shape.type === 'polygon'
+                            : (shape.type === 'polygon' || (shape.type === 'polyline' && shape.isPolygon))
                                 ? shape.points.map(p => [p.x, p.y])
                                 : shape.type === 'point'
                                     ? [[shape.x, shape.y]]
@@ -3604,6 +3729,40 @@ function findOsnap(x, y) {
 }
 
 // Check if a point is inside a shape - OPTIMIZED with Unified Shape Handler
+/**
+ * Calculate distance from point to line segment
+ * @param {number} px - Point X coordinate
+ * @param {number} py - Point Y coordinate  
+ * @param {number} x1 - Line start X
+ * @param {number} y1 - Line start Y
+ * @param {number} x2 - Line end X
+ * @param {number} y2 - Line end Y
+ * @returns {number} Distance from point to line segment
+ */
+function distanceToLineSegment(px, py, x1, y1, x2, y2) {
+    // Vector from line start to end
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    
+    // If line has zero length, return distance to point
+    if (dx === 0 && dy === 0) {
+        return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
+    }
+    
+    // Calculate parameter t for closest point on line
+    const t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
+    
+    // Clamp t to segment bounds [0, 1]
+    const clampedT = Math.max(0, Math.min(1, t));
+    
+    // Find closest point on segment
+    const closestX = x1 + clampedT * dx;
+    const closestY = y1 + clampedT * dy;
+    
+    // Return distance from point to closest point on segment
+    return Math.sqrt((px - closestX) * (px - closestX) + (py - closestY) * (py - closestY));
+}
+
 function isPointInShape(shape, x, y) {
     // Use optimized unified handler if available
     if (window.shapeHandler) {
@@ -3671,12 +3830,15 @@ function isPointInShape(shape, x, y) {
             return angle >= start && angle <= end;
         }
         return false;
-    } else if (shape.type === 'polygon') {
+    } else if (shape.type === 'polygon' || (shape.type === 'polyline' && shape.isPolygon)) {
         // Simple point-in-polygon test
         let inside = false;
-        for (let i = 0, j = shape.points.length - 1; i < shape.points.length; j = i++) {
-            const xi = shape.points[i].x, yi = shape.points[i].y;
-            const xj = shape.points[j].x, yj = shape.points[j].y;
+        // For polygon polylines, exclude the last point since it's a duplicate of the first
+        const points = shape.isPolygon && shape.points.length > 2 ? 
+            shape.points.slice(0, -1) : shape.points;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+            const xi = points[i].x, yi = points[i].y;
+            const xj = points[j].x, yj = points[j].y;
 
             const intersect = ((yi > y) != (yj > y))
                 && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
@@ -3716,17 +3878,60 @@ function isPointInShape(shape, x, y) {
         }
         return false;
     } else if (shape.type === 'text') {
-        // Check text selection by bounding box
+        // Check text selection by bounding box (Professional CAD style with Y-flip correction)
         if (shape.content && shape.x !== undefined && shape.y !== undefined) {
-            const textSize = shape.size || (12 / zoom);
-            const textWidth = shape.content.length * textSize * 0.6; // Approximate text width
-            const textHeight = textSize;
+            const worldTextSize = shape.size || shape.height || 12; // Text height in world units
             
-            // Create bounding box around text
-            const minX = shape.x - (textWidth * 0.1);
-            const maxX = shape.x + textWidth;
-            const minY = shape.y - textHeight;
-            const maxY = shape.y + (textHeight * 0.3);
+            // Calculate approximate text dimensions in world units
+            const charWidth = worldTextSize * 0.6; // Average character width
+            const textWidth = shape.content.length * charWidth;
+            const textHeight = worldTextSize;
+            
+            // CRITICAL FIX: Account for Y-flip + alphabetic baseline
+            // In rendering: textBaseline='alphabetic' + Y-flip means text appears above insertion point
+            const baselineOffset = textHeight * 0.2; // alphabetic baseline offset
+            
+            let minX, maxX, minY, maxY;
+            
+            if (shape.align) {
+                switch (shape.align.toLowerCase()) {
+                    case 'center':
+                    case 'middle':
+                        minX = shape.x - textWidth / 2;
+                        maxX = shape.x + textWidth / 2;
+                        minY = shape.y - textHeight / 2;
+                        maxY = shape.y + textHeight / 2;
+                        break;
+                    case 'right':
+                        minX = shape.x - textWidth;
+                        maxX = shape.x;
+                        // With Y-flip + alphabetic baseline, text appears above insertion point
+                        minY = shape.y + baselineOffset;
+                        maxY = shape.y + textHeight + baselineOffset;
+                        break;
+                    case 'left':
+                    default:
+                        minX = shape.x;
+                        maxX = shape.x + textWidth;
+                        // With Y-flip + alphabetic baseline, text appears above insertion point
+                        minY = shape.y + baselineOffset;
+                        maxY = shape.y + textHeight + baselineOffset;
+                        break;
+                }
+            } else {
+                // Default left alignment - With Y-flip + alphabetic baseline
+                minX = shape.x;
+                maxX = shape.x + textWidth;
+                minY = shape.y + baselineOffset;
+                maxY = shape.y + textHeight + baselineOffset;
+            }
+            
+            // Add tolerance for easier selection
+            const tolerance = 3 / zoom;
+            minX -= tolerance;
+            maxX += tolerance;
+            minY -= tolerance;
+            maxY += tolerance;
             
             return x >= minX && x <= maxX && y >= minY && y <= maxY;
         }
@@ -3749,6 +3954,279 @@ function clearSelection() {
     if (propertiesPanel && propertiesPanel.style.display !== 'none') {
         updatePropertiesPanel();
     }
+}
+
+/**
+ * Check if shape is entirely within selection window (window selection)
+ * @param {Object} shape - Shape to check
+ * @param {number} x1 - Window start X
+ * @param {number} y1 - Window start Y  
+ * @param {number} x2 - Window end X
+ * @param {number} y2 - Window end Y
+ * @returns {boolean} True if shape is entirely within window
+ */
+function isShapeInWindow(shape, x1, y1, x2, y2) {
+    // Normalize window coordinates
+    const minX = Math.min(x1, x2);
+    const maxX = Math.max(x1, x2);
+    const minY = Math.min(y1, y2);
+    const maxY = Math.max(y1, y2);
+    
+    switch(shape.type) {
+        case 'line':
+            return (shape.x1 >= minX && shape.x1 <= maxX && shape.y1 >= minY && shape.y1 <= maxY) &&
+                   (shape.x2 >= minX && shape.x2 <= maxX && shape.y2 >= minY && shape.y2 <= maxY);
+                   
+        case 'circle':
+            return (shape.cx - shape.radius >= minX && shape.cx + shape.radius <= maxX &&
+                   shape.cy - shape.radius >= minY && shape.cy + shape.radius <= maxY);
+                   
+        case 'arc':
+            // Simplified check - check if center and radius bounds are within window
+            return (shape.cx - shape.radius >= minX && shape.cx + shape.radius <= maxX &&
+                   shape.cy - shape.radius >= minY && shape.cy + shape.radius <= maxY);
+                   
+        case 'rectangle':
+            const rectMinX = Math.min(shape.x1, shape.x2);
+            const rectMaxX = Math.max(shape.x1, shape.x2);
+            const rectMinY = Math.min(shape.y1, shape.y2);
+            const rectMaxY = Math.max(shape.y1, shape.y2);
+            return (rectMinX >= minX && rectMaxX <= maxX && rectMinY >= minY && rectMaxY <= maxY);
+            
+        case 'ellipse':
+            // Simplified check using axis-aligned bounding box
+            return (shape.cx - shape.rx >= minX && shape.cx + shape.rx <= maxX &&
+                   shape.cy - shape.ry >= minY && shape.cy + shape.ry <= maxY);
+                   
+        case 'polyline':
+        case 'polygon':
+        case 'spline':
+            if (!shape.points || shape.points.length === 0) return false;
+            // Check if all points are within window
+            return shape.points.every(point => 
+                point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY);
+                
+        case 'point':
+            return (shape.x >= minX && shape.x <= maxX && shape.y >= minY && shape.y <= maxY);
+            
+        case 'text':
+        case 'mtext':
+            // Text bounds depend on content and alignment (Professional CAD style)
+            if (shape.content && shape.x !== undefined && shape.y !== undefined) {
+                const worldTextSize = shape.size || shape.height || 12;
+                const charWidth = worldTextSize * 0.6;
+                const textWidth = shape.content.length * charWidth;
+                const textHeight = worldTextSize;
+                
+                // CRITICAL FIX: Match hit testing logic - text goes ABOVE insertion point due to Y-flip
+                let textMinX, textMaxX, textMinY, textMaxY;
+                
+                if (shape.align) {
+                    switch (shape.align.toLowerCase()) {
+                        case 'center':
+                        case 'middle':
+                            textMinX = shape.x - textWidth / 2;
+                            textMaxX = shape.x + textWidth / 2;
+                            textMinY = shape.y - textHeight / 2;
+                            textMaxY = shape.y + textHeight / 2;
+                            break;
+                        case 'right':
+                            textMinX = shape.x - textWidth;
+                            textMaxX = shape.x;
+                            // With Y-flip, text goes ABOVE insertion point
+                            textMinY = shape.y;
+                            textMaxY = shape.y + textHeight;
+                            break;
+                        case 'left':
+                        default:
+                            textMinX = shape.x;
+                            textMaxX = shape.x + textWidth;
+                            // With Y-flip, text goes ABOVE insertion point
+                            textMinY = shape.y;
+                            textMaxY = shape.y + textHeight;
+                            break;
+                    }
+                } else {
+                    // Default left alignment - With Y-flip, text goes ABOVE insertion point
+                    textMinX = shape.x;
+                    textMaxX = shape.x + textWidth;
+                    textMinY = shape.y;
+                    textMaxY = shape.y + textHeight;
+                }
+                
+                return (textMinX >= minX && textMaxX <= maxX && textMinY >= minY && textMaxY <= maxY);
+            }
+            return (shape.x >= minX && shape.x <= maxX && shape.y >= minY && shape.y <= maxY);
+            
+        default:
+            return false;
+    }
+}
+
+/**
+ * Check if shape intersects with selection window (crossing selection)
+ * @param {Object} shape - Shape to check
+ * @param {number} x1 - Window start X
+ * @param {number} y1 - Window start Y
+ * @param {number} x2 - Window end X  
+ * @param {number} y2 - Window end Y
+ * @returns {boolean} True if shape intersects with window
+ */
+function doesShapeIntersectWindow(shape, x1, y1, x2, y2) {
+    // Normalize window coordinates
+    const minX = Math.min(x1, x2);
+    const maxX = Math.max(x1, x2);
+    const minY = Math.min(y1, y2);
+    const maxY = Math.max(y1, y2);
+    
+    switch(shape.type) {
+        case 'line':
+            // Line-rectangle intersection test
+            return lineIntersectsRect(shape.x1, shape.y1, shape.x2, shape.y2, minX, minY, maxX, maxY);
+            
+        case 'circle':
+            // Circle-rectangle intersection test
+            return circleIntersectsRect(shape.cx, shape.cy, shape.radius, minX, minY, maxX, maxY);
+            
+        case 'arc':
+            // Simplified: check if arc's bounding circle intersects
+            return circleIntersectsRect(shape.cx, shape.cy, shape.radius, minX, minY, maxX, maxY);
+            
+        case 'rectangle':
+            const rectMinX = Math.min(shape.x1, shape.x2);
+            const rectMaxX = Math.max(shape.x1, shape.x2);
+            const rectMinY = Math.min(shape.y1, shape.y2);
+            const rectMaxY = Math.max(shape.y1, shape.y2);
+            // Rectangle-rectangle intersection
+            return !(rectMaxX < minX || rectMinX > maxX || rectMaxY < minY || rectMinY > maxY);
+            
+        case 'ellipse':
+            // Simplified: check if ellipse's bounding box intersects
+            const ellipseMinX = shape.cx - shape.rx;
+            const ellipseMaxX = shape.cx + shape.rx;
+            const ellipseMinY = shape.cy - shape.ry;
+            const ellipseMaxY = shape.cy + shape.ry;
+            return !(ellipseMaxX < minX || ellipseMinX > maxX || ellipseMaxY < minY || ellipseMinY > maxY);
+            
+        case 'polyline':
+        case 'polygon':
+        case 'spline':
+            if (!shape.points || shape.points.length === 0) return false;
+            // Check if any line segment intersects with window
+            for (let i = 1; i < shape.points.length; i++) {
+                if (lineIntersectsRect(
+                    shape.points[i-1].x, shape.points[i-1].y,
+                    shape.points[i].x, shape.points[i].y,
+                    minX, minY, maxX, maxY)) {
+                    return true;
+                }
+            }
+            // Also check if any point is within window
+            return shape.points.some(point => 
+                point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY);
+                
+        case 'point':
+            return (shape.x >= minX && shape.x <= maxX && shape.y >= minY && shape.y <= maxY);
+            
+        case 'text':
+        case 'mtext':
+            // Text crossing selection (Professional CAD style) - check if text bounds intersect window - Y-flip corrected
+            if (shape.content && shape.x !== undefined && shape.y !== undefined) {
+                const worldTextSize = shape.size || shape.height || 12;
+                const charWidth = worldTextSize * 0.6;
+                const textWidth = shape.content.length * charWidth;
+                const textHeight = worldTextSize;
+                
+                // CRITICAL FIX: Match hit testing logic - text goes ABOVE insertion point due to Y-flip
+                let textMinX, textMaxX, textMinY, textMaxY;
+                
+                if (shape.align) {
+                    switch (shape.align.toLowerCase()) {
+                        case 'center':
+                        case 'middle':
+                            textMinX = shape.x - textWidth / 2;
+                            textMaxX = shape.x + textWidth / 2;
+                            textMinY = shape.y - textHeight / 2;
+                            textMaxY = shape.y + textHeight / 2;
+                            break;
+                        case 'right':
+                            textMinX = shape.x - textWidth;
+                            textMaxX = shape.x;
+                            // With Y-flip, text goes ABOVE insertion point
+                            textMinY = shape.y;
+                            textMaxY = shape.y + textHeight;
+                            break;
+                        case 'left':
+                        default:
+                            textMinX = shape.x;
+                            textMaxX = shape.x + textWidth;
+                            // With Y-flip, text goes ABOVE insertion point
+                            textMinY = shape.y;
+                            textMaxY = shape.y + textHeight;
+                            break;
+                    }
+                } else {
+                    // Default left alignment - With Y-flip, text goes ABOVE insertion point
+                    textMinX = shape.x;
+                    textMaxX = shape.x + textWidth;
+                    textMinY = shape.y;
+                    textMaxY = shape.y + textHeight;
+                }
+                
+                // Check if text bounds intersect with selection window
+                return !(textMaxX < minX || textMinX > maxX || textMaxY < minY || textMinY > maxY);
+            }
+            return (shape.x >= minX && shape.x <= maxX && shape.y >= minY && shape.y <= maxY);
+            
+        default:
+            return false;
+    }
+}
+
+/**
+ * Test if line intersects with rectangle
+ */
+function lineIntersectsRect(x1, y1, x2, y2, rectX1, rectY1, rectX2, rectY2) {
+    // Check if either endpoint is inside rectangle
+    if ((x1 >= rectX1 && x1 <= rectX2 && y1 >= rectY1 && y1 <= rectY2) ||
+        (x2 >= rectX1 && x2 <= rectX2 && y2 >= rectY1 && y2 <= rectY2)) {
+        return true;
+    }
+    
+    // Check line intersection with rectangle edges
+    return lineIntersectsLine(x1, y1, x2, y2, rectX1, rectY1, rectX2, rectY1) ||  // top
+           lineIntersectsLine(x1, y1, x2, y2, rectX2, rectY1, rectX2, rectY2) ||  // right
+           lineIntersectsLine(x1, y1, x2, y2, rectX2, rectY2, rectX1, rectY2) ||  // bottom
+           lineIntersectsLine(x1, y1, x2, y2, rectX1, rectY2, rectX1, rectY1);    // left
+}
+
+/**
+ * Test if two line segments intersect
+ */
+function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(denom) < 1e-10) return false; // Parallel lines
+    
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+    
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+/**
+ * Test if circle intersects with rectangle
+ */
+function circleIntersectsRect(cx, cy, radius, rectX1, rectY1, rectX2, rectY2) {
+    // Find the closest point on the rectangle to the circle center
+    const closestX = Math.max(rectX1, Math.min(cx, rectX2));
+    const closestY = Math.max(rectY1, Math.min(cy, rectY2));
+    
+    // Calculate distance from circle center to closest point
+    const dx = cx - closestX;
+    const dy = cy - closestY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    return distance <= radius;
 }
 
 // Select all shapes
@@ -4091,10 +4569,10 @@ function zoomOutStep() {
 }
 
 /**
- * Reset zoom to 1:1 and recalculate grid
+ * Reset zoom to default 3.7x scale and recalculate grid
  */
 function resetZoom() {
-    zoom = 1.0;
+    zoom = 3.7; // Default realistic millimeter scale
     offsetX = canvas.width / 2;
     offsetY = canvas.height / 2;
     
@@ -4286,7 +4764,7 @@ function _redraw() {
     ctx.clearRect(-offsetX / zoom, -offsetY / zoom, canvas.width / zoom, canvas.height / zoom);
     drawGrid();
 
-    // Draw all shapes
+    // Draw all shapes using enhanced rendering system
     for (let i = 0; i < shapes.length; i++) {
         const shape = shapes[i];
         
@@ -4296,20 +4774,25 @@ function _redraw() {
             continue;
         }
         
-        renderStandardShapes(ctx, shape, zoom, i);
+        // Use enhanced shape rendering with proper coordinate transformation
+        if (typeof drawShape === 'function') {
+            // Enhanced rendering with coordinate transformation
+            drawShape(ctx, shape, zoom, i);
+        } else {
+            // Fallback to standard rendering if enhanced system not available
+            renderStandardShapes(ctx, shape, zoom, i);
+        }
     }
 
     // Draw previews
     if (mode === 'line' && isDrawing && startX !== undefined && startY !== undefined && previewX !== undefined && previewY !== undefined) {
-        // NEW LINE PREVIEW - Restored with improved styling
+        // Line preview with solid line style (same as other objects)
         ctx.strokeStyle = '#0ff';
         ctx.lineWidth = 1 / zoom;
-        ctx.setLineDash([3 / zoom, 3 / zoom]); // Dashed line for preview
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(previewX, previewY);
         ctx.stroke();
-        ctx.setLineDash([]); // Reset dash
     } else if (mode === 'polyline' && polylinePoints.length > 0 && polylinePreviewActive) {
         ctx.strokeStyle = '#0ff';
         ctx.lineWidth = 1 / zoom;
@@ -4459,46 +4942,18 @@ function _redraw() {
         ctx.lineWidth = 1 / zoom;
         
         if (rectangleStep === 1) {
-            // Show line from start to current mouse position (free direction)
-            ctx.beginPath();
-            ctx.moveTo(rectangleStartX, rectangleStartY);
-            ctx.lineTo(previewX, previewY);
-            ctx.stroke();
-        } else if (rectangleStep === 2) {
-            // Show first side and perpendicular preview to cursor
-            const dx = rectangleEndX - rectangleStartX;
-            const dy = rectangleEndY - rectangleStartY;
-            const sideLength = Math.sqrt(dx * dx + dy * dy);
-            
-            // Unit vectors
-            const ux = dx / sideLength;
-            const uy = dy / sideLength;
-            const vx = -uy; // Perpendicular
-            const vy = ux;
-            
-            // Calculate perpendicular distance from cursor to first side
-            const clickDx = previewX - rectangleStartX;
-            const clickDy = previewY - rectangleStartY;
-            const perpDistance = clickDx * vx + clickDy * vy;
-            
-            // Calculate rectangle corners
-            const corners = [
-                { x: rectangleStartX, y: rectangleStartY },
-                { x: rectangleEndX, y: rectangleEndY },
-                { x: rectangleEndX + vx * perpDistance, y: rectangleEndY + vy * perpDistance },
-                { x: rectangleStartX + vx * perpDistance, y: rectangleStartY + vy * perpDistance }
-            ];
+            // Professional CAD style preview: show rectangle from first corner to cursor position
+            const minX = Math.min(rectangleStartX, previewX);
+            const maxX = Math.max(rectangleStartX, previewX);
+            const minY = Math.min(rectangleStartY, previewY);
+            const maxY = Math.max(rectangleStartY, previewY);
             
             // Draw rectangle preview
             ctx.beginPath();
-            ctx.moveTo(corners[0].x, corners[0].y);
-            ctx.lineTo(corners[1].x, corners[1].y);
-            ctx.lineTo(corners[2].x, corners[2].y);
-            ctx.lineTo(corners[3].x, corners[3].y);
-            ctx.closePath();
+            ctx.rect(minX, minY, maxX - minX, maxY - minY);
             ctx.stroke();
         }
-    } else if (mode === 'polygon' && polygonStep === 3) {
+    } else if (mode === 'polygon' && polygonStep === 2 && previewX !== undefined && previewY !== undefined) {
         ctx.strokeStyle = '#0ff';
         ctx.lineWidth = 1 / zoom;
         
@@ -4829,32 +5284,60 @@ function drawEllipsePreview(ctx, cursorX, cursorY) {
 
 // === Mode-specific mouse handlers ===
 function handleSelectMode(x, y, e) {
-    if (e.shiftKey) {
-        // Multi-select mode - don't clear previous selections
-    } else {
-        // First clear any existing selection
+    // Check if we're clicking on an object first (before clearing selection)
+    let clickedShape = null;
+    let clickedIndex = -1;
+    
+    // Find object under cursor (search from top to bottom)
+    for (let i = shapes.length - 1; i >= 0; i--) {
+        if (isPointInShape(shapes[i], x, y)) {
+            clickedShape = shapes[i];
+            clickedIndex = i;
+            break;
+        }
+    }
+    
+    if (clickedShape) {
+        // Clicked on an object
+        if (e.shiftKey) {
+            // Multi-select mode - toggle selection of clicked object
+            if (selectedShapes.has(clickedIndex)) {
+                selectedShapes.delete(clickedIndex);
+                addToHistory(`Object deselected`);
+            } else {
+                selectedShapes.add(clickedIndex);
+                addToHistory(`Object added to selection`);
+            }
+        } else {
+            // Single-select mode
+            if (selectedShapes.has(clickedIndex) && selectedShapes.size === 1) {
+                // Already selected single object - start moving
+                isMoving = true;
+                moveStartX = x;
+                moveStartY = y;
+                return;
+            } else {
+                // Select new object (clear other selections)
+                clearSelection();
+                selectedShapes.add(clickedIndex);
+                addToHistory(`Object selected: ${clickedShape.type}`);
+            }
+        }
+        redraw();
+        
+        // Update properties panel if open
+        const propertiesPanel = document.getElementById('propertiesPanel');
+        if (propertiesPanel && propertiesPanel.style.display !== 'none') {
+            updatePropertiesPanel();
+        }
+        return;
+    }
+    
+    // No object clicked - start selection window
+    if (!e.shiftKey) {
         clearSelection();
     }
 
-    // Check if we're clicking on a selected shape to start moving
-    if (selectedShapes.size > 0) {
-        let clickedOnSelected = false;
-        for (const i of selectedShapes) {
-            if (isPointInShape(shapes[i], x, y)) {
-                clickedOnSelected = true;
-                break;
-            }
-        }
-        
-        if (clickedOnSelected) {
-            isMoving = true;
-            moveStartX = x;
-            moveStartY = y;
-            return;
-        }
-    }
-
-    // Start selection window
     startX = x;
     startY = y;
     isDrawing = true;
@@ -5235,59 +5718,51 @@ function handleArcMode(x, y, e) {
 }
 
 function handleRectangleMode(x, y, e) {
-    // Rectangle mode handling with step-by-step construction
+    // Professional CAD style rectangle creation: first corner → opposite corner
     
     if (rectangleStep === 0) {
-        // First click - set first point of rectangle
+        // First click - set first corner
         rectangleStartX = x;
         rectangleStartY = y;
         rectangleStep = 1;
         isDrawing = true;
         
-        showLengthInput(e.offsetX, e.offsetY);
-        updateLengthInputLabel('Side length:');
-        updateHelpBar('Step 2/3: Click second corner, type length + Enter, or use Escape to cancel');
-        addToHistory(`Rectangle first point at (${x.toFixed(2)}, ${y.toFixed(2)}) - enter length or click for second point`);
+        updateHelpBar('Specify other corner point or [Area/Dimensions/Rotation]:');
+        addToHistory(`Rectangle first corner at (${x.toFixed(2)}, ${y.toFixed(2)})`);
+        redraw();
     } else if (rectangleStep === 1) {
-        // Second click - set second point with ortho if enabled
+        // Second click - create rectangle from two opposite corners
+        
+        // Apply ortho mode if enabled
         [x, y] = applyOrtho(x, y, rectangleStartX, rectangleStartY);
-        rectangleEndX = x;
-        rectangleEndY = y;
-        rectangleWidth = Math.sqrt(Math.pow(x - rectangleStartX, 2) + Math.pow(y - rectangleStartY, 2));
-        rectangleStep = 2;
         
-        if (isLengthInputActive) {
-            hideLengthInput();
-        }
+        // Create rectangle points in counterclockwise order
+        const minX = Math.min(rectangleStartX, x);
+        const maxX = Math.max(rectangleStartX, x);
+        const minY = Math.min(rectangleStartY, y);
+        const maxY = Math.max(rectangleStartY, y);
         
-        showLengthInput(e.offsetX, e.offsetY);
-        updateLengthInputLabel('Width:');
-        updateHelpBar('Step 3/3: Click to set width, type width + Enter, or use Escape to cancel');
-        addToHistory(`Rectangle second point set - enter width or click for perpendicular side`);
-    } else if (rectangleStep === 2) {
-        // Third step - set width by clicking perpendicular to the first side
-        // Calculate perpendicular distance from click point to the first side line
-        const dx = rectangleEndX - rectangleStartX;
-        const dy = rectangleEndY - rectangleStartY;
-        const sideLength = Math.sqrt(dx * dx + dy * dy);
+        const points = [
+            { x: minX, y: minY }, // Bottom-left
+            { x: maxX, y: minY }, // Bottom-right
+            { x: maxX, y: maxY }, // Top-right
+            { x: minX, y: maxY }, // Top-left
+            { x: minX, y: minY }  // Close the rectangle
+        ];
         
-        // Unit vector along the first side
-        const ux = dx / sideLength;
-        const uy = dy / sideLength;
+        // Create rectangle as closed polyline (Professional CAD style)
+        addShape(createShapeWithProperties({
+            type: 'polyline',
+            points: points
+        }));
         
-        // Vector from start to click point
-        const clickDx = x - rectangleStartX;
-        const clickDy = y - rectangleStartY;
+        const width = Math.abs(maxX - minX);
+        const height = Math.abs(maxY - minY);
+        addToHistory(`Rectangle created: ${width.toFixed(2)} × ${height.toFixed(2)}`);
         
-        // Project click point onto perpendicular direction
-        const perpDx = -uy; // Perpendicular unit vector
-        const perpDy = ux;
-        
-        // Calculate perpendicular distance (this is our width)
-        rectangleHeight = clickDx * perpDx + clickDy * perpDy;
-        
-        createFinalRectangle();
         updateHelpBar('Rectangle completed! Select another tool or object.');
+        
+        // Reset and return to select mode
         resetRectangleMode();
         
         // Reset help bar to default after 3 seconds
@@ -5296,57 +5771,17 @@ function handleRectangleMode(x, y, e) {
                 updateHelpBar('Selection mode (default) - Click objects to select, drag to select area');
             }
         }, 3000);
+        
         redraw();
     }
 }
 
 function resetRectangleMode() {
     rectangleStep = 0;
-    rectangleWidth = 0;
-    rectangleHeight = 0;
     isDrawing = false;
-    hideLengthInput();
     setMode('select');
     
     // Force redraw to clear any preview
-    redraw();
-}
-
-function createFinalRectangle() {
-    // Calculate the four corners of the rectangle
-    const dx = rectangleEndX - rectangleStartX;
-    const dy = rectangleEndY - rectangleStartY;
-    const sideLength = Math.sqrt(dx * dx + dy * dy);
-    
-    // Unit vectors for the first side
-    const ux = dx / sideLength; // Unit vector along first side
-    const uy = dy / sideLength;
-    const vx = -uy; // Unit vector perpendicular (for width)
-    const vy = ux;
-    
-    // Calculate the four corners
-    const corners = [
-        { x: rectangleStartX, y: rectangleStartY }, // Start point
-        { x: rectangleEndX, y: rectangleEndY }, // End of first side
-        { x: rectangleEndX + vx * rectangleHeight, y: rectangleEndY + vy * rectangleHeight }, // Third corner
-        { x: rectangleStartX + vx * rectangleHeight, y: rectangleStartY + vy * rectangleHeight } // Fourth corner
-    ];
-    
-    // Close the rectangle by adding the first point again
-    const points = [...corners, corners[0]];
-    
-    addShape({ 
-        type: 'polyline', 
-        points,
-        color: currentColor,
-        lineWeight: currentLineWeight,
-        linetype: currentLinetype,
-        layer: currentLayer
-    });
-    
-    addToHistory(`Rectangle created: side length ${sideLength.toFixed(2)}, width ${Math.abs(rectangleHeight).toFixed(2)}`);
-    
-    // Force immediate redraw to show the completed rectangle
     redraw();
 }
 
@@ -5617,10 +6052,10 @@ canvas.addEventListener('mousedown', (e) => {
                 isDrawing = true;
                 showLengthInput(e.offsetX, e.offsetY);
                 updateLengthInputLabel('Number of sides:');
-                updateHelpBar('Step 2/4: Enter number of sides (3-50) for polygon');
+                updateHelpBar('Step 2/3: Enter number of sides (3-50) for polygon');
                 addToHistory(`Polygon center set at (${x.toFixed(2)}, ${y.toFixed(2)}) - enter number of sides`);
-            } else if (polygonStep === 3) {
-                // Click to set radius and rotation based on distance and angle from center
+            } else if (polygonStep === 2) {
+                // Second click: set radius and rotation based on distance and angle from center
                 const radius = Math.sqrt(Math.pow(x - polygonCenterX, 2) + Math.pow(y - polygonCenterY, 2));
                 const angle = Math.atan2(y - polygonCenterY, x - polygonCenterX);
                 polygonRadius = radius;
@@ -5866,19 +6301,12 @@ canvas.addEventListener('mousemove', (e) => {
         redraw();
     }
     else if (mode === 'rectangle' && isDrawing) {
-        // Special ortho handling for rectangle based on step
+        // Professional CAD style rectangle - apply ortho if enabled
         if (rectangleStep === 1) {
-            // First step - applying ortho to first side direction
             [x, y] = applyOrtho(x, y, rectangleStartX, rectangleStartY);
         }
-        // For step 2, we don't apply ortho as the perpendicular is automatic
         
         [previewX, previewY] = [x, y];
-        
-        // Update length input position if active
-        if (isLengthInputActive) {
-            updateLengthInputPosition(e.offsetX, e.offsetY);
-        }
         
         redraw();
     }
@@ -5933,6 +6361,17 @@ canvas.addEventListener('mousemove', (e) => {
         
         redraw();
     }
+    else if (mode === 'polygon' && polygonStep === 2) {
+        // Show polygon preview while dragging
+        [previewX, previewY] = [x, y];
+        
+        // Update length input position if active
+        if (isLengthInputActive) {
+            updateLengthInputPosition(e.offsetX, e.offsetY);
+        }
+        
+        redraw();
+    }
     else if (mode === 'move' && movePreviewActive && moveStep === 2) {
         // Update preview coordinates for move mode - this makes objects follow cursor
         [previewX, previewY] = [x, y];
@@ -5966,12 +6405,224 @@ canvas.addEventListener('mousemove', (e) => {
 
     if (!isDrawing) redraw();
 
+    // REMOVED: Hover highlighting disabled per user request
+    // No more blue highlighting when hovering over objects
+
     cursorCoordsElement.textContent = `X: ${x.toFixed(2)} Y: ${y.toFixed(2)}`;
 });
 
 canvas.addEventListener('mouseleave', () => {
     cursorCoordsElement.textContent = 'X: - Y: -';
 });
+
+// === TEXT EDITING ON DOUBLE CLICK ===
+let textEditingMode = false;
+let editingTextShape = null;
+let textEditDialog = null;
+
+canvas.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    
+    // Only handle double-click in select mode
+    if (mode !== 'select') return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+    const [x, y] = screenToWorld(clientX, clientY);
+    
+    // Find text shape under cursor
+    for (let i = shapes.length - 1; i >= 0; i--) {
+        const shape = shapes[i];
+        if (shape.type === 'text' && isPointInShape(shape, x, y)) {
+            // Start editing this text shape
+            startTextEditing(shape, i);
+            return;
+        }
+    }
+});
+
+function startTextEditing(shape, shapeIndex) {
+    if (textEditingMode) return; // Already editing
+    
+    textEditingMode = true;
+    editingTextShape = { shape, index: shapeIndex };
+    
+    // Create edit dialog
+    showTextEditDialog(shape);
+    
+    addToHistory(`Started editing text: "${shape.content}"`);
+}
+
+function showTextEditDialog(shape) {
+    // Create modal dialog for text editing
+    textEditDialog = document.createElement('div');
+    textEditDialog.className = 'text-edit-dialog';
+    textEditDialog.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #2a2a2a;
+        border: 2px solid #4c6fff;
+        border-radius: 8px;
+        padding: 20px;
+        z-index: 10000;
+        color: white;
+        font-family: Arial, sans-serif;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        min-width: 300px;
+    `;
+    
+    textEditDialog.innerHTML = `
+        <h3 style="margin-top: 0; color: #4c6fff;">Edit Text - Professional CAD Style</h3>
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px;">Text Content:</label>
+            <textarea id="textContentEdit" style="
+                width: 100%; 
+                height: 80px; 
+                background: #1a1a1a; 
+                color: white; 
+                border: 1px solid #555; 
+                border-radius: 4px; 
+                padding: 8px;
+                font-family: monospace;
+                resize: vertical;
+            ">${shape.content || ''}</textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px;">Text Height:</label>
+            <input type="number" id="textHeightEdit" value="${shape.size || shape.height || 12}" step="0.1" min="0.1" style="
+                width: 100px; 
+                background: #1a1a1a; 
+                color: white; 
+                border: 1px solid #555; 
+                border-radius: 4px; 
+                padding: 8px;
+            ">
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px;">Text Alignment:</label>
+            <select id="textAlignEdit" style="
+                width: 120px; 
+                background: #1a1a1a; 
+                color: white; 
+                border: 1px solid #555; 
+                border-radius: 4px; 
+                padding: 8px;
+            ">
+                <option value="left" ${(shape.align === 'left' || !shape.align) ? 'selected' : ''}>Left</option>
+                <option value="center" ${shape.align === 'center' ? 'selected' : ''}>Center</option>
+                <option value="right" ${shape.align === 'right' ? 'selected' : ''}>Right</option>
+                <option value="middle" ${shape.align === 'middle' ? 'selected' : ''}>Middle</option>
+            </select>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px;">Rotation (degrees):</label>
+            <input type="number" id="textRotationEdit" value="${shape.rotation || 0}" step="1" min="-360" max="360" style="
+                width: 100px; 
+                background: #1a1a1a; 
+                color: white; 
+                border: 1px solid #555; 
+                border-radius: 4px; 
+                padding: 8px;
+            ">
+        </div>
+        <div style="text-align: right; margin-top: 20px;">
+            <button id="textEditCancel" style="
+                background: #666; 
+                color: white; 
+                border: none; 
+                border-radius: 4px; 
+                padding: 10px 20px; 
+                margin-right: 10px; 
+                cursor: pointer;
+            ">Cancel</button>
+            <button id="textEditOK" style="
+                background: #4c6fff; 
+                color: white; 
+                border: none; 
+                border-radius: 4px; 
+                padding: 10px 20px; 
+                cursor: pointer;
+            ">OK</button>
+        </div>
+    `;
+    
+    document.body.appendChild(textEditDialog);
+    
+    // Focus on text content
+    const textArea = document.getElementById('textContentEdit');
+    textArea.focus();
+    textArea.select();
+    
+    // Add event handlers
+    document.getElementById('textEditOK').addEventListener('click', confirmTextEdit);
+    document.getElementById('textEditCancel').addEventListener('click', cancelTextEdit);
+    
+    // Handle Enter key for quick OK (Ctrl+Enter or Alt+Enter)
+    textArea.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.altKey) && e.key === 'Enter') {
+            e.preventDefault();
+            confirmTextEdit();
+        }
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelTextEdit();
+        }
+    });
+}
+
+function confirmTextEdit() {
+    if (!editingTextShape || !textEditDialog) return;
+    
+    const newContent = document.getElementById('textContentEdit').value;
+    const newHeight = parseFloat(document.getElementById('textHeightEdit').value) || 12;
+    const newAlign = document.getElementById('textAlignEdit').value;
+    const newRotation = parseFloat(document.getElementById('textRotationEdit').value) || 0;
+    
+    // Save state for undo
+    saveState('Edit text');
+    
+    // Update the shape
+    const shape = editingTextShape.shape;
+    shape.content = newContent;
+    shape.size = newHeight;
+    shape.height = newHeight; // Compatibility
+    shape.align = newAlign;
+    shape.rotation = newRotation;
+    
+    // Mark shape as selected for visual feedback
+    selectedShapes.clear();
+    selectedShapes.add(editingTextShape.index);
+    
+    addToHistory(`Text edited: "${newContent}" (${newHeight} height, ${newAlign} align, ${newRotation}° rotation)`);
+    
+    // Clean up and redraw
+    closeTextEditDialog();
+    redraw();
+    
+    // Update properties panel if open
+    const propertiesPanel = document.getElementById('propertiesPanel');
+    if (propertiesPanel && propertiesPanel.style.display !== 'none') {
+        updatePropertiesPanel();
+    }
+}
+
+function cancelTextEdit() {
+    addToHistory('Text editing cancelled');
+    closeTextEditDialog();
+}
+
+function closeTextEditDialog() {
+    textEditingMode = false;
+    editingTextShape = null;
+    
+    if (textEditDialog) {
+        document.body.removeChild(textEditDialog);
+        textEditDialog = null;
+    }
+}
 
 // Helper function to check if user is currently typing in an input field
 function isUserTypingInInput() {
@@ -5987,11 +6638,6 @@ document.addEventListener('keydown', (e) => {
     // Handle Ctrl+Z (Undo) and Ctrl+Y (Redo)
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
         // File Operations
-        if (e.key === 'n' || e.key === 'N') {
-            e.preventDefault();
-            newDrawing();
-            return;
-        }
         if (e.key === 'o' || e.key === 'O') {
             e.preventDefault();
             openDrawing();
@@ -6022,14 +6668,14 @@ document.addEventListener('keydown', (e) => {
             addToHistory('Keyboard zoom to fit executed (Ctrl+0)');
             return;
         }
-        // Layer Manager with Ctrl+L (like AutoCAD)
+        // Layer Manager with Ctrl+L (like professional CAD software)
         if (e.key === 'l' || e.key === 'L') {
             e.preventDefault();
             toggleLayerPanel();
             addToHistory('Layer Manager toggled (Ctrl+L)');
             return;
         }
-        // Properties Panel with Ctrl+P (like AutoCAD)
+        // Properties Panel with Ctrl+P (like professional CAD software)
         if (e.key === 'p' || e.key === 'P') {
             e.preventDefault();
             togglePropertiesPanel();
@@ -6039,12 +6685,6 @@ document.addEventListener('keydown', (e) => {
     }
     
     if (e.key === 'Escape') {
-        // Hide polygon input if active
-        if (polygonInputActive) {
-            cancelPolygonSettings();
-            return;
-        }
-        
         // Hide length input if active
         if (isLengthInputActive) {
             hideLengthInput();
@@ -6130,7 +6770,7 @@ document.addEventListener('keydown', (e) => {
         }
         else if (mode === 'rectangle' && rectangleStep > 0) {
             resetRectangleMode();
-            updateHelpBar('Step 1/3: Click first corner for rectangle');
+            updateHelpBar('Specify first corner point:');
             addToHistory('Rectangle cancelled');
             redraw();
         }
@@ -6220,8 +6860,6 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-
-    
     // Note: Enter key handling for spline completion removed - only use Escape or double-click
     
     // Activate length input with 'L' key in polyline mode
@@ -6444,64 +7082,6 @@ function handleLengthInput(length) {
                 updateHelpBar('Selection mode (default) - Click objects to select, drag to select area');
             }
         }, 3000);
-    } else if (mode === 'rectangle' && isDrawing && length > 0) {
-        // Handle rectangle input based on current step
-        if (rectangleStep === 1) {
-            // Setting first side length manually based on current mouse direction
-            let dx = previewX - rectangleStartX;
-            let dy = previewY - rectangleStartY;
-            
-            // Apply ortho to the direction if ortho mode is enabled
-            if (orthoMode) {
-                [dx, dy] = applyOrtho(dx, dy, 0, 0);
-            }
-            
-            const currentLength = Math.sqrt(dx * dx + dy * dy);
-            
-            if (currentLength > 0) {
-                // Normalize direction and apply length
-                const ux = dx / currentLength;
-                const uy = dy / currentLength;
-                rectangleEndX = rectangleStartX + length * ux;
-                rectangleEndY = rectangleStartY + length * uy;
-                rectangleWidth = length;
-                rectangleStep = 2;
-                
-                // Update preview coordinates to current mouse position for width preview
-                const [mouseWorldX, mouseWorldY] = screenToWorld(currentMouseX, currentMouseY);
-                previewX = mouseWorldX;
-                previewY = mouseWorldY;
-                
-                hideLengthInput();
-                showLengthInput(currentMouseX, currentMouseY);
-                updateLengthInputLabel('Width:');
-                updateHelpBar('Step 3/3: Click to set width, type width + Enter, or use Escape to cancel');
-                redraw(); // Redraw to show the first side
-                addToHistory(`Rectangle first side set to ${length.toFixed(2)} - enter width or click perpendicular`);
-            }
-        } else if (rectangleStep === 2) {
-            // Setting width manually (perpendicular distance)
-            rectangleHeight = length;
-            
-            // Update preview coordinates before finalizing
-            const [mouseWorldX, mouseWorldY] = screenToWorld(currentMouseX, currentMouseY);
-            previewX = mouseWorldX;
-            previewY = mouseWorldY;
-            
-            createFinalRectangle();
-            updateHelpBar('Rectangle completed! Select another tool or object.');
-            resetRectangleMode();
-            
-            // Reset help bar to default after 3 seconds
-            setTimeout(() => {
-                if (mode === 'select') {
-                    updateHelpBar('Selection mode (default) - Click objects to select, drag to select area');
-                }
-            }, 3000);
-            
-            // Additional redraw to ensure rectangle is visible immediately
-            redraw();
-        }
     } else if (mode === 'polygon' && polygonStep >= 1) {
         // Handle polygon input based on current step
         if (handlePolygonLengthInput(length)) {
@@ -6636,7 +7216,7 @@ lengthInput.addEventListener('blur', (e) => {
             ((mode === 'line' && isDrawing) || 
              (mode === 'circle' && isDrawing) || 
              (mode === 'polygon' && (polygonStep === 1 || polygonStep === 3)) ||
-             (mode === 'rectangle' && (rectangleStep === 1 || rectangleStep === 2)) ||
+             (mode === 'rectangle' && rectangleStep === 1) ||
              (mode === 'polyline' && polylinePoints.length > 0)) &&
             !e.relatedTarget) { // Only refocus if blur wasn't caused by clicking on another element
             lengthInput.focus();
@@ -6663,7 +7243,7 @@ function confirmText() {
             x: textPosition.x,
             y: textPosition.y,
             content: textInput.value,
-            size: 12 / zoom
+            size: 12  // Use fixed world size, not divided by zoom
         }));
         updateHelpBar('Text placed! Click to place another text or press Escape to finish');
         redraw();
@@ -6735,10 +7315,6 @@ function promptNewLayer() {
     }
 }
 
-
-
-
-
 // === Add Shape Function ===
 function addShape(shape) {
     // Save state before adding shape
@@ -6752,7 +7328,7 @@ function addShape(shape) {
     shapes.push(shape);
     addToHistory(`${shape.type} created`);
     
-    // AutoCAD-like behavior: if using non-ByLayer lineweight, mark as temporary
+    // Professional CAD-like behavior: if using non-ByLayer lineweight, mark as temporary
     // and reset to ByLayer after creating the object
     if (currentLineWeight !== 'byLayer' && !isTemporaryLineweight) {
         isTemporaryLineweight = true;
@@ -6761,106 +7337,11 @@ function addShape(shape) {
         addToHistory('Lineweight reset to ByLayer');
     }
     
-    // Auto-return to select mode after creating a shape (AutoCAD-like behavior)
+    // Auto-return to select mode after creating a shape (Professional CAD-like behavior)
     if (mode !== 'select' && mode !== 'polyline' && mode !== 'spline' && mode !== 'hatch') {
         setMode('select');
     }
 }
-
-// === POLYGON INPUT FUNCTIONS ===
-
-function showPolygonInput(x, y) {
-    polygonInputActive = true;
-    startX = x;
-    startY = y;
-    
-    // Set current values
-    document.getElementById('polygonSidesInput').value = polygonSides;
-    document.getElementById('polygonDiameterInput').value = polygonDiameter;
-    
-    // Set radio button state
-    document.getElementById('polygonRadiusMode').checked = (polygonMode === 'radius');
-    document.getElementById('polygonDiameterMode').checked = (polygonMode === 'diameter');
-    
-    // Enable/disable diameter input based on mode
-    updatePolygonDiameterInput();
-    
-    // Show the overlay
-    document.getElementById('polygonInputOverlay').style.display = 'block';
-    
-    // Focus on sides input
-    document.getElementById('polygonSidesInput').focus();
-    document.getElementById('polygonSidesInput').select();
-    
-    addToHistory(`Polygon center at (${x.toFixed(2)}, ${y.toFixed(2)}) - configure settings`);
-}
-
-function updatePolygonDiameterInput() {
-    const diameterInput = document.getElementById('polygonDiameterInput');
-    const diameterMode = document.getElementById('polygonDiameterMode').checked;
-    
-    diameterInput.disabled = !diameterMode;
-    if (diameterMode) {
-        diameterInput.focus();
-    }
-}
-
-function confirmPolygonSettings() {
-    const sidesInput = document.getElementById('polygonSidesInput');
-    const diameterInput = document.getElementById('polygonDiameterInput');
-    const radiusMode = document.getElementById('polygonRadiusMode').checked;
-    
-    // Validate sides
-    const sides = parseInt(sidesInput.value);
-    if (sides < 3 || sides > 50) {
-        alert('Number of sides must be between 3 and 50');
-        sidesInput.focus();
-        return;
-    }
-    
-    // Update global settings
-    polygonSides = sides;
-    polygonMode = radiusMode ? 'radius' : 'diameter';
-    
-    if (polygonMode === 'diameter') {
-        const diameter = safeParseFloat(diameterInput.value, 0, 'polygon diameter');
-        if (diameter <= 0) {
-            alert('Diameter must be greater than 0');
-            diameterInput.focus();
-            return;
-        }
-        polygonDiameter = diameter;
-        
-        // Create polygon immediately with specified diameter
-        const radius = diameter / 2;
-        createPolygon(startX, startY, radius);
-        isDrawing = false;
-        setMode('select');
-    } else {
-        // Switch to radius drawing mode
-        isDrawing = true;
-        addToHistory(`Click to set polygon radius (${polygonSides} sides)`);
-    }
-    
-    hidePolygonInput();
-    redraw();
-}
-
-function cancelPolygonSettings() {
-    hidePolygonInput();
-    setMode('select');
-    addToHistory('Polygon creation cancelled');
-}
-
-function hidePolygonInput() {
-    document.getElementById('polygonInputOverlay').style.display = 'none';
-    polygonInputActive = false;
-}
-
-// Make functions globally accessible
-window.confirmPolygonSettings = confirmPolygonSettings;
-window.cancelPolygonSettings = cancelPolygonSettings;
-window.updatePolygonDiameterInput = updatePolygonDiameterInput;
 
 function createPolygon(centerX, centerY, radius) {
     const points = [];
@@ -6872,13 +7353,27 @@ function createPolygon(centerX, centerY, radius) {
         });
     }
     
+    // Add the first point again to close the polygon
+    if (points.length > 0) {
+        points.push({
+            x: points[0].x,
+            y: points[0].y
+        });
+    }
+    
+    // Create as polyline instead of polygon - this makes it behave like polyline in properties
     addShape({ 
-        type: 'polygon', 
+        type: 'polyline', 
         points,
         color: currentColor,
         lineWeight: currentLineWeight,
         linetype: currentLinetype,
-        layer: currentLayer
+        layer: currentLayer,
+        // Add polygon metadata to preserve polygon information
+        isPolygon: true,
+        polygonSides: polygonSides,
+        polygonRadius: radius,
+        polygonCenter: { x: centerX, y: centerY }
     });
     
     addToHistory(`Polygon created: ${polygonSides} sides, radius ${radius.toFixed(2)}`);
@@ -6890,7 +7385,6 @@ function resetPolygonMode() {
     polygonStep = 0;
     polygonAngle = 0;
     isDrawing = false;
-    hidePolygonRadiusTypeSelector();
     hideLengthInput();
     setMode('select');
 }
@@ -6914,14 +7408,33 @@ function createFinalPolygon() {
         });
     }
     
-    addShape({ 
-        type: 'polygon', 
+    // Add the first point again to close the polygon
+    if (points.length > 0) {
+        points.push({
+            x: points[0].x,
+            y: points[0].y
+        });
+    }
+    
+    // Create as polyline instead of polygon - this makes it behave like polyline in properties
+    const newShape = { 
+        type: 'polyline', 
         points,
         color: currentColor,
         lineWeight: currentLineWeight,
         linetype: currentLinetype,
-        layer: currentLayer
-    });
+        layer: currentLayer,
+        // Add polygon metadata to preserve polygon information
+        isPolygon: true,
+        polygonSides: polygonSides,
+        polygonRadius: polygonRadius,
+        polygonRadiusType: polygonRadiusType,
+        polygonCenter: { x: polygonCenterX, y: polygonCenterY }
+    };
+    
+    addShape(newShape);
+    
+    console.log('Polygon created as polyline:', newShape);
     
     const radiusTypeText = polygonRadiusType === 'inscribed' ? 'inscribed' : 'circumscribed';
     addToHistory(`Polygon created: ${polygonSides} sides, radius ${polygonRadius.toFixed(2)} (${radiusTypeText}), angle ${(polygonAngle * 180 / Math.PI).toFixed(1)}deg`);
@@ -6935,16 +7448,15 @@ function handlePolygonLengthInput(value) {
             polygonSides = sides;
             polygonStep = 2;
             hideLengthInput();
-            // Show radius type selector
-            showPolygonRadiusTypeSelector();
-            updateHelpBar('Step 3/4: Choose radius type (Inscribed or Circumscribed)');
-            addToHistory(`Number of sides set to ${polygonSides} - choose radius type`);
+            // Skip radius type selector step - it's already selected via toolbar button
+            updateHelpBar('Step 3/3: Click center point, then drag to set radius and angle');
+            addToHistory(`Number of sides set to ${polygonSides} - ${polygonRadiusType} polygon selected`);
         } else {
             addToHistory('Number of sides must be between 3 and 50', 'error');
             return false;
         }
-    } else if (polygonStep === 3) {
-        // Setting radius manually
+    } else if (polygonStep === 2) {
+        // Setting radius manually (alternative to clicking)
         const radius = safeParseFloat(value, 0, 'polygon radius');
         if (radius > 0) {
             polygonRadius = radius;
@@ -6962,38 +7474,6 @@ function handlePolygonLengthInput(value) {
         }
     }
     return true;
-}
-
-// === POLYGON RADIUS TYPE SELECTOR FUNCTIONS ===
-function showPolygonRadiusTypeSelector() {
-    const [sx, sy] = worldToScreen(polygonCenterX, polygonCenterY);
-    polygonRadiusTypeSelector.style.left = `${sx + 20}px`;
-    polygonRadiusTypeSelector.style.top = `${sy - 40}px`;
-    polygonRadiusTypeSelector.style.display = 'block';
-    
-    // Update button states
-    polygonInscribedBtn.classList.toggle('active', polygonRadiusType === 'inscribed');
-    polygonCircumscribedBtn.classList.toggle('active', polygonRadiusType === 'circumscribed');
-}
-
-function hidePolygonRadiusTypeSelector() {
-    polygonRadiusTypeSelector.style.display = 'none';
-}
-
-function selectPolygonRadiusType(type) {
-    polygonRadiusType = type;
-    polygonStep = 3; // Move to radius setting step
-    hidePolygonRadiusTypeSelector();
-    
-    // Show length input for radius
-    showLengthInput();
-    const label = type === 'inscribed' ? 'Inscribed radius:' : 'Circumscribed radius:';
-    updateLengthInputLabel(label);
-    setLengthInputValue('');
-    updateHelpBar('Step 4/4: Enter radius value or click to set radius and rotation');
-    
-    const typeText = type === 'inscribed' ? 'inscribed' : 'circumscribed';
-    addToHistory(`Selected ${typeText} radius - enter value or click point`);
 }
 
 function drawPolygonPreview(ctx, centerX, centerY, radius, rotationAngle) {
@@ -7016,7 +7496,6 @@ function drawPolygonPreview(ctx, centerX, centerY, radius, rotationAngle) {
 }
 
 // === GLOBAL FUNCTIONS FOR HTML ===
-window.selectPolygonRadiusType = selectPolygonRadiusType;
 
 // Make copy command globally accessible
 window.startCopyCommand = startCopyCommand;
@@ -7152,40 +7631,6 @@ window.cleanup = () => {
 // === FILE OPERATIONS ===
 
 /**
- * Create a new empty drawing
- */
-function newDrawing() {
-    if (shapes.length > 0) {
-        if (!confirm('Create new drawing? Current work will be lost.')) {
-            return;
-        }
-    }
-    
-    // Clear all data
-    shapes = [];
-    selectedShapes.clear();
-    
-    // Reset layers to default
-    layers = [
-        { name: '0', color: '#ffffff', visible: true, locked: false, lineWeight: 'byLayer', linetype: 'continuous' }
-    ];
-    currentLayer = '0';
-    
-    // Reset view
-    zoom = 1.0;
-    offsetX = canvas.width / 2;
-    offsetY = canvas.height / 2;
-    
-    // Clear history
-    undoStack = [];
-    redoStack = [];
-    
-    updateLayerSelector();
-    redraw();
-    addToHistory('New drawing created');
-}
-
-/**
  * Open file dialog to load a drawing
  */
 function openDrawing() {
@@ -7234,7 +7679,7 @@ function loadDrawing(file) {
             
             // Load view settings if available
             if (data.view) {
-                zoom = data.view.zoom || 1.0;
+                zoom = data.view.zoom || 3.7; // Default to realistic millimeter scale
                 offsetX = data.view.offsetX || canvas.width / 2;
                 offsetY = data.view.offsetY || canvas.height / 2;
             }
@@ -7268,12 +7713,12 @@ function loadDrawing(file) {
 function saveDrawing() {
     try {
         const data = {
-            version: '0.250803',
+            version: '0.250808',
             title: 'Web1CAD Drawing',
             created: new Date().toISOString(),
             author: 'Oleh Korobkov',
             copyright: '© 2025 Oleh Korobkov. All rights reserved.',
-            software: 'Web1CAD - Professional 2D CAD System 0.250803 Beta',
+            software: 'Web1CAD - Professional 2D CAD System 0.250808 Beta',
             license: 'Proprietary - Unauthorized use prohibited',
             shapes: shapes,
             layers: layers,
@@ -7449,6 +7894,88 @@ function performPdfExport(minX, minY, maxX, maxY) {
         tempCtx.lineCap = 'round';
         tempCtx.lineJoin = 'round';
         
+        // Enhanced PDF rendering function using new rendering core
+        function renderShapeForPdf(ctx, shape, scale) {
+            // Use enhanced rendering system if available
+            if (typeof drawShape === 'function') {
+                // Save context and use enhanced rendering
+                ctx.save();
+                
+                // Set appropriate zoom for PDF (scale is already applied)
+                const pdfZoom = 1; // Use 1 since scale is already applied
+                
+                // Use enhanced rendering system
+                drawShape(ctx, shape, pdfZoom, false); // Not selected for PDF
+                
+                ctx.restore();
+            } else {
+                // Fallback to basic PDF rendering
+                renderBasicShapeForPdf(ctx, shape, scale);
+            }
+        }
+
+        // Fallback basic PDF rendering
+        function renderBasicShapeForPdf(ctx, shape, scale) {
+            ctx.save();
+            
+            // Apply shape styling
+            ctx.strokeStyle = shape.color || '#000000';
+            ctx.lineWidth = (shape.lineWeight || 1) / scale;
+            
+            // Apply linetype if supported
+            if (shape.linetype && shape.linetype !== 'continuous') {
+                const patterns = {
+                    'dashed': [15/scale, 5/scale],
+                    'dotted': [1/scale, 4/scale],
+                    'dashdot': [15/scale, 4/scale, 1/scale, 4/scale],
+                    'center': [25/scale, 5/scale, 5/scale, 5/scale]
+                };
+                ctx.setLineDash(patterns[shape.linetype] || []);
+            }
+            
+            // Basic shape rendering for PDF
+            switch(shape.type) {
+                case 'line':
+                    ctx.beginPath();
+                    ctx.moveTo(shape.x1, shape.y1);
+                    ctx.lineTo(shape.x2, shape.y2);
+                    ctx.stroke();
+                    break;
+                    
+                case 'circle':
+                    ctx.beginPath();
+                    ctx.arc(shape.cx, shape.cy, shape.radius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    break;
+                    
+                case 'polyline':
+                    if (shape.points && shape.points.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(shape.points[0].x, shape.points[0].y);
+                        for (let i = 1; i < shape.points.length; i++) {
+                            ctx.lineTo(shape.points[i].x, shape.points[i].y);
+                        }
+                        ctx.stroke();
+                    }
+                    break;
+                    
+                case 'text':
+                    if (shape.content) {
+                        ctx.fillStyle = shape.color || '#000000';
+                        // FIXED: proper logic for PDF export
+                        const worldSize = shape.size || 12; // World units
+                        const pdfSize = worldSize / scale; // Proper scaling for PDF
+                        ctx.font = `${pdfSize}px Arial`;
+                        ctx.fillText(shape.content, shape.x, shape.y);
+                    }
+                    break;
+                    
+                // Add more shape types as needed
+            }
+            
+            ctx.restore();
+        }
+
         // Render shapes that intersect with the selected area
         shapes.forEach(shape => {
             const bounds = getShapeBounds(shape);
@@ -7671,6 +8198,32 @@ function drawPreviewContent(canvas, bounds, paperDimensions, scaleMode, customSc
 }
 
 function drawSimplifiedShape(ctx, shape) {
+    // Use enhanced rendering system if available for consistency
+    if (typeof drawShape === 'function') {
+        ctx.save();
+        
+        // Set global flag for PDF preview mode
+        window.pdfPreviewMode = true;
+        
+        // Draw with simplified styling (no special effects)
+        drawShape(ctx, shape, 1, false); // zoom=1, not selected
+        
+        // Clear global flag
+        window.pdfPreviewMode = false;
+        
+        ctx.restore();
+        return;
+    }
+    
+    // Fallback to basic simplified rendering with color conversion
+    ctx.save();
+    
+    // Apply color conversion for preview
+    const shapeColor = shape.color || '#ffffff';
+    const previewColor = convertWhiteToBlackForPreview(shapeColor);
+    ctx.strokeStyle = previewColor;
+    ctx.fillStyle = previewColor;
+    
     ctx.beginPath();
     
     switch(shape.type) {
@@ -7695,9 +8248,23 @@ function drawSimplifiedShape(ctx, shape) {
         case 'arc':
             ctx.arc(shape.cx, shape.cy, shape.radius, shape.startAngle, shape.endAngle);
             break;
+            
+        case 'text':
+            // FIXED: proper text size logic for preview with color conversion
+            if (shape.content) {
+                const worldSize = shape.size || 12; // World units  
+                const screenSize = worldSize; // For this context use without division
+                ctx.font = `${screenSize}px Arial`;
+                ctx.fillStyle = previewColor; // Use converted color for text
+                ctx.fillText(shape.content, shape.x, shape.y);
+                ctx.restore();
+                return; // Don't stroke text
+            }
+            break;
     }
     
     ctx.stroke();
+    ctx.restore();
 }
 
 function updateExportInfo() {
@@ -7977,13 +8544,30 @@ function exportShapesToPdfVector(pdf, bounds, scale, offsetX, offsetY, settings)
 }
 
 function setVectorPdfStyle(pdf, color, lineWeight, scale, settings) {
-    // Convert color to RGB
+    // Professional CAD logic: white color on black CAD background → black on white PDF
     let r = 0, g = 0, b = 0;
-    if (color && color !== '#ffffff') {
-        if (color.startsWith('#')) {
-            r = parseInt(color.substr(1, 2), 16);
-            g = parseInt(color.substr(3, 2), 16);
-            b = parseInt(color.substr(5, 2), 16);
+    
+    if (color) {
+        // Normalize color to lowercase for comparison
+        const normalizedColor = color.toLowerCase();
+        
+        // White color (#ffffff, #fff, white) convert to black for PDF
+        if (normalizedColor === '#ffffff' || normalizedColor === '#fff' || 
+            normalizedColor === 'white' || normalizedColor === 'rgb(255,255,255)') {
+            r = g = b = 0; // Black color for PDF
+        } else if (normalizedColor.startsWith('#')) {
+            // Keep all other colors as they are
+            if (normalizedColor.length === 4) {
+                // Short format #rgb → #rrggbb
+                r = parseInt(normalizedColor[1] + normalizedColor[1], 16);
+                g = parseInt(normalizedColor[2] + normalizedColor[2], 16);
+                b = parseInt(normalizedColor[3] + normalizedColor[3], 16);
+            } else if (normalizedColor.length === 7) {
+                // Full format #rrggbb
+                r = parseInt(normalizedColor.substr(1, 2), 16);
+                g = parseInt(normalizedColor.substr(3, 2), 16);
+                b = parseInt(normalizedColor.substr(5, 2), 16);
+            }
         }
     }
     
@@ -8135,37 +8719,55 @@ function exportShapeToVector(pdf, shape, transformX, transformY, scale) {
             break;
             
         case 'text':
-            // Professional VECTOR text export with all properties - with safety checks
+            // Professional CAD-style text export with consistent scaling
             const textContent = shape.content || shape.text || '';
             if (textContent && shape.x !== undefined && shape.y !== undefined) {
-                // Calculate proper font size with scaling
-                const textHeight = shape.height || shape.size || 12;
-                const fontSize = textHeight * scale * 0.3; // Convert CAD units to PDF points
-                
-                // Set font properties
-                const fontFamily = shape.font || 'Arial';
                 try {
+                    // Professional CAD text height conversion: CAD units to PDF points
+                    const textHeight = shape.height || shape.size || 12; // Text height in CAD world units
+                    const fontSize = textHeight * scale * 0.75; // Professional CAD standard conversion factor
+                    
+                    // Set font properties
+                    const fontFamily = shape.font || 'Arial';
                     pdf.setFont(fontFamily);
                     pdf.setFontSize(Math.max(fontSize, 6)); // Minimum 6pt for readability
                     
-                    // Handle text rotation
-                    const rotation = shape.rotation || 0;
+                    // Professional CAD text alignment mapping
                     const options = {};
+                    
+                    // Handle text rotation (Professional CAD style)
+                    const rotation = shape.rotation || 0;
                     if (rotation !== 0) {
-                        options.angle = rotation; // jsPDF expects degrees
+                        options.angle = -rotation; // Invert for PDF coordinate system
                     }
                     
-                    // Handle text alignment
+                    // Handle text alignment (Professional CAD style)
                     const align = shape.align || 'left';
-                    if (align !== 'left') {
-                        options.align = align;
+                    switch (align.toLowerCase()) {
+                        case 'center':
+                        case 'middle':
+                            options.align = 'center';
+                            break;
+                        case 'right':
+                            options.align = 'right';
+                            break;
+                        case 'left':
+                        default:
+                            options.align = 'left';
+                            break;
                     }
                     
-                    // Export text at proper position
+                    // Calculate position with Professional CAD coordinate system compatibility
+                    const pdfX = transformX(shape.x);
+                    const pdfY = transformY(shape.y);
+                    
+                    // Export text at proper position with baseline alignment
+                    options.baseline = 'alphabetic'; // Professional CAD standard baseline
+                    
                     pdf.text(
                         textContent,
-                        transformX(shape.x),
-                        transformY(shape.y),
+                        pdfX,
+                        pdfY,
                         options
                     );
                 } catch (error) {
@@ -8358,13 +8960,21 @@ function generateSplinePoints(controlPoints, segmentsPerSpan) {
 // Helper functions for vector PDF export
 function resolveShapeColor(shape, layer) {
     // Return shape color or layer color
+    let color;
     if (shape.color && shape.color !== 'ByLayer' && shape.color !== 'byLayer') {
-        return shape.color;
+        color = shape.color;
+    } else if (layer && layer.color) {
+        color = layer.color;
+    } else {
+        color = currentColor && currentColor !== 'byLayer' ? currentColor : '#ffffff'; // Default to white/current color
     }
-    if (layer && layer.color) {
-        return layer.color;
+    
+    // Convert white to black for PDF preview mode
+    if (window.pdfPreviewMode && window.convertWhiteToBlackForPreview) {
+        color = window.convertWhiteToBlackForPreview(color);
     }
-    return currentColor && currentColor !== 'byLayer' ? currentColor : '#ffffff'; // Default to white/current color
+    
+    return color;
 }
 
 function resolveShapeLineWeight(shape, layer) {
@@ -8551,5 +9161,17 @@ function shapesIntersect(shapeBounds, areaBounds) {
              shapeBounds.maxY < areaBounds.minY || 
              shapeBounds.minY > areaBounds.maxY);
 }
+
+// === POLYGON DROPDOWN FUNCTIONS ===
+// Polygon mode setup function
+function setPolygonMode(type) {
+    polygonRadiusType = type;
+    setMode('polygon');
+    addToHistory(`Polygon mode: ${type === 'inscribed' ? 'Inscribed in circle' : 'Circumscribed around circle'}`);
+}
+
+// Make functions globally available
+window.setPolygonMode = setPolygonMode;
+window.selectPolygonType = selectPolygonType;
 
 // === END OF CAD APPLICATION ===
