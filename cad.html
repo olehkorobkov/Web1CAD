@@ -1,22 +1,13 @@
 <!DOCTYPE html>
 <!--
     Web1CAD - Professional 2D CAD System
-    Version 0.250804 Beta (August 4, 2025)
+    Version 0.250808 Beta (August 8, 2025) - TEXT EDITING UPDATE
     Developed by Oleh Korobkov
     © 2025 Oleh Korobkov. All rights reserved.
     Unauthorized use or distribution is prohibited.
 -->
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-61SFQ3E44G"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-61SFQ3E44G');
-</script>
     <meta charset="UTF-8">
     <title>Web1CAD</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,8 +27,9 @@
         <div class="toolbar-button" title="Ellipse" onclick="setMode('ellipse')">⬭</div>
         <div class="toolbar-button" title="Arc" onclick="setMode('arc')">∩</div>
         <div class="toolbar-button" title="Rectangle" onclick="setMode('rectangle')">▭</div>
-        <div class="toolbar-button" title="Polygon" onclick="setMode('polygon')">⬠</div>
-        <div class="toolbar-button" title="Spline" onclick="setMode('spline')">➿</div>
+        <div class="toolbar-button" title="Inscribed Polygon" onclick="setPolygonMode('inscribed')">⌼</div>
+        <div class="toolbar-button" title="Circumscribed Polygon" onclick="setPolygonMode('circumscribed')">⌾</div>
+        <div class="toolbar-button" title="Spline" onclick="setMode('spline')">∿</div>
         <div class="toolbar-button" title="Hatch" onclick="setMode('hatch')">▧</div>
         <div class="toolbar-button" title="Point" onclick="setMode('point')">•</div>
         <div class="toolbar-button" title="Text" onclick="setMode('text')">𝙏</div>
@@ -46,7 +38,6 @@
         <div class="toolbar-separator"></div>
         
         <!-- File Operations -->
-        <div class="toolbar-button" title="New Drawing" onclick="newDrawing()">📄</div>
         <div class="toolbar-button" title="Open Drawing" onclick="openDrawing()">📂</div>
         <div class="toolbar-button" title="Save Drawing" onclick="saveDrawing()">💾</div>
         <div class="toolbar-button" title="Area to PDF" onclick="setMode('area_to_pdf')">PDF</div>
@@ -289,19 +280,6 @@
                     <button class="pdf-btn pdf-btn-cancel" onclick="closePdfExportDialog()">❌ Cancel</button>
                     <button class="pdf-btn pdf-btn-export" onclick="exportToPdfWithSettings()">📄 Export PDF</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Polygon radius type selector -->
-        <div id="polygonRadiusTypeSelector" class="polygon-radius-type-selector" style="display: none;">
-            <div class="polygon-radius-type-header">Radius Type:</div>
-            <div class="polygon-radius-type-options">
-                <button id="polygonInscribedBtn" class="polygon-radius-type-btn active" onclick="selectPolygonRadiusType('inscribed')">
-                    Inscribed
-                </button>
-                <button id="polygonCircumscribedBtn" class="polygon-radius-type-btn" onclick="selectPolygonRadiusType('circumscribed')">
-                    Circumscribed
-                </button>
             </div>
         </div>
 
