@@ -12,22 +12,22 @@
 const COMMAND_CONFIGS = {
     line: {
         formats: [
-            { pattern: /^(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)$/, 
+            { pattern: /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/, 
               create: (m) => ({ type: 'line', x1: +m[1], y1: +m[2], x2: +m[3], y2: +m[4] }) },
-            { pattern: /^from\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/, 
+            { pattern: /^from\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)$/, 
               create: (m) => ({ type: 'line', x1: +m[1], y1: +m[2], x2: +m[3], y2: +m[4] }) }
         ],
-        usage: 'line x1,y1 x2,y2'
+        usage: 'line x1,y1 x2,y2 (supports negative coordinates)'
     },
     
     circle: {
         formats: [
-            { pattern: /^(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/, 
+            { pattern: /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/, 
               create: (m) => +m[3] > 0 ? { type: 'circle', cx: +m[1], cy: +m[2], radius: +m[3] } : null },
-            { pattern: /^center\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/, 
+            { pattern: /^center\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/, 
               create: (m) => +m[3] > 0 ? { type: 'circle', cx: +m[1], cy: +m[2], radius: +m[3] } : null }
         ],
-        usage: 'circle cx,cy radius'
+        usage: 'circle cx,cy radius (supports negative coordinates)'
     },
     
     arc: {
@@ -42,10 +42,25 @@ const COMMAND_CONFIGS = {
     
     rectangle: {
         formats: [
+            // Format: rectangle x1,y1 x2,y2 (two opposite corners - CAD style)
             { pattern: /^(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)$/, 
-              create: (m) => +m[3] > 0 && +m[4] > 0 ? { type: 'rectangle', x: +m[1], y: +m[2], width: +m[3], height: +m[4] } : null }
+              create: (m) => createRectangleFromCorners(+m[1], +m[2], +m[3], +m[4]) },
+            // Format: rectangle cx,cy width height (center point with dimensions)
+            { pattern: /^center\s+(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/, 
+              create: (m) => +m[3] > 0 && +m[4] > 0 ? createRectangleFromCenter(+m[1], +m[2], +m[3], +m[4]) : null },
+            // Alias commands
+            { pattern: /^(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/, 
+              create: (m) => +m[3] > 0 && +m[4] > 0 ? createRectangleFromCornerAndSize(+m[1], +m[2], +m[3], +m[4]) : null }
         ],
-        usage: 'rectangle x,y width,height'
+        usage: 'rectangle x1,y1 x2,y2 | rectangle center cx,cy width height | rectangle x,y width height'
+    },
+    
+    rect: {
+        formats: [
+            { pattern: /^(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)$/, 
+              create: (m) => createRectangleFromCorners(+m[1], +m[2], +m[3], +m[4]) }
+        ],
+        usage: 'rect x1,y1 x2,y2'
     },
     
     ellipse: {
@@ -66,42 +81,51 @@ const COMMAND_CONFIGS = {
     
     polyline: {
         formats: [
-            { pattern: /^((?:\d+(?:\.\d+)?),\d+(?:\.\d+)?(?:\s+|$))+$/, 
+            { pattern: /^((?:-?\d+(?:\.\d+)?),(?:-?\d+(?:\.\d+)?)(?:\s+|$))+$/, 
               create: (m) => createPointsShape('polyline', m[0]) }
         ],
-        usage: 'polyline x1,y1 x2,y2 x3,y3 ...'
+        usage: 'polyline x1,y1 x2,y2 x3,y3 ... (supports negative coordinates)'
+    },
+    
+    // Add PLINE alias for polyline (CAD compatibility)
+    pline: {
+        formats: [
+            { pattern: /^((?:-?\d+(?:\.\d+)?),(?:-?\d+(?:\.\d+)?)(?:\s+|$))+$/, 
+              create: (m) => createPointsShape('polyline', m[0]) }
+        ],
+        usage: 'pline x1,y1 x2,y2 x3,y3 ... (CAD style polyline with negative coordinates)'
     },
     
     spline: {
         formats: [
-            { pattern: /^((?:\d+(?:\.\d+)?),\d+(?:\.\d+)?(?:\s+|$))+$/, 
+            { pattern: /^((?:-?\d+(?:\.\d+)?),(?:-?\d+(?:\.\d+)?)(?:\s+|$))+$/, 
               create: (m) => createPointsShape('spline', m[0]) }
         ],
-        usage: 'spline x1,y1 x2,y2 x3,y3 ... (min 3 points)'
+        usage: 'spline x1,y1 x2,y2 x3,y3 ... (min 3 points, supports negative coordinates)'
     },
     
     hatch: {
         formats: [
-            { pattern: /^((?:\d+(?:\.\d+)?),\d+(?:\.\d+)?(?:\s+|$))+$/, 
+            { pattern: /^((?:-?\d+(?:\.\d+)?),(?:-?\d+(?:\.\d+)?)(?:\s+|$))+$/, 
               create: (m) => createPointsShape('hatch', m[0]) }
         ],
-        usage: 'hatch x1,y1 x2,y2 x3,y3 x4,y4 ... (pairs)'
+        usage: 'hatch x1,y1 x2,y2 x3,y3 x4,y4 ... (pairs, supports negative coordinates)'
     },
     
     point: {
         formats: [
-            { pattern: /^(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)$/, 
+            { pattern: /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/, 
               create: (m) => ({ type: 'point', x: +m[1], y: +m[2] }) }
         ],
-        usage: 'point x,y'
+        usage: 'point x,y (supports negative coordinates)'
     },
     
     text: {
         formats: [
-            { pattern: /^(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)\s+(.+)$/, 
+            { pattern: /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\s+(.+)$/, 
               create: (m) => ({ type: 'text', x: +m[1], y: +m[2], content: m[3], size: 12 / (window.zoom || 1) }) }
         ],
-        usage: 'text x,y "content"'
+        usage: 'text x,y "content" (supports negative coordinates)'
     }
 };
 
@@ -139,7 +163,10 @@ function createPointsShape(type, coordString) {
     
     for (const coord of coords) {
         const [x, y] = coord.split(',').map(Number);
-        if (isNaN(x) || isNaN(y)) return null;
+        if (isNaN(x) || isNaN(y)) {
+            console.warn(`Invalid coordinate pair: ${coord}, parsed as x=${x}, y=${y}`);
+            return null;
+        }
         points.push({ x, y });
     }
     
@@ -147,16 +174,18 @@ function createPointsShape(type, coordString) {
     if ((type === 'polyline' && points.length < 2) || 
         (type === 'spline' && points.length < 3) ||
         (type === 'hatch' && (points.length < 2 || points.length % 2 !== 0))) {
+        console.warn(`Invalid point count for ${type}: ${points.length} points`);
         return null;
     }
     
+    console.log(`Created ${type} with ${points.length} points:`, points);
     return { type, points };
 }
 
 // Main command execution functions
 function executeMultipleCommands(input) {
     const commands = input.replace(/\n/g, ' ').trim()
-        .match(/\b(line|circle|rectangle|polygon|polyline|arc|ellipse|spline|hatch|point|text)\s+[^a-z]*/gi);
+        .match(/\b(line|circle|rectangle|polygon|polyline|pline|arc|ellipse|spline|hatch|point|text)\s+[^a-z]*/gi);
     
     if (commands && commands.length > 1) {
         let processed = 0;
@@ -249,16 +278,90 @@ function executeSingleCommand(cmd) {
             return true;
             
         case 'help':
-            addToHistory('Commands: line x1,y1 x2,y2 | circle cx,cy r | arc cx,cy r a1 a2 | grid on/off | zoom fit | select all | help');
+            addToHistory('Commands: line x1,y1 x2,y2 | circle cx,cy r | arc cx,cy r a1 a2 | rectangle x1,y1 x2,y2 | text x,y "content" or just text | grid on/off | zoom fit | select all | help');
             return true;
+            
+        case 'text':
+            if (params.trim() === '') {
+                // Interactive text mode
+                setMode('text');
+                addToHistory('Text mode activated. Click on drawing area to place text.');
+                return true;
+            }
+            // Try pattern matching for text with coordinates
+            break;
             
         default:
             // Try to set tool mode
-            if (['line', 'circle', 'arc', 'rectangle', 'polygon', 'polyline', 'ellipse', 'spline', 'hatch', 'point', 'text'].includes(command)) {
+            if (['line', 'circle', 'arc', 'rectangle', 'polygon', 'polyline', 'pline', 'ellipse', 'spline', 'hatch', 'point', 'text'].includes(command)) {
                 setMode(command);
                 return true;
             }
             addToHistory(`Unknown command: ${command}`, 'error');
             return false;
     }
+}
+
+// === Rectangle Creation Helper Functions ===
+
+/**
+ * Create rectangle from two opposite corners (CAD style)
+ */
+function createRectangleFromCorners(x1, y1, x2, y2) {
+    const minX = Math.min(x1, x2);
+    const maxX = Math.max(x1, x2);
+    const minY = Math.min(y1, y2);
+    const maxY = Math.max(y1, y2);
+    
+    const points = [
+        { x: minX, y: minY }, // Bottom-left
+        { x: maxX, y: minY }, // Bottom-right
+        { x: maxX, y: maxY }, // Top-right
+        { x: minX, y: maxY }, // Top-left
+        { x: minX, y: minY }  // Close the rectangle
+    ];
+    
+    return {
+        type: 'polyline',
+        points: points
+    };
+}
+
+/**
+ * Create rectangle from center point and dimensions
+ */
+function createRectangleFromCenter(cx, cy, width, height) {
+    const halfW = width / 2;
+    const halfH = height / 2;
+    
+    const points = [
+        { x: cx - halfW, y: cy - halfH }, // Bottom-left
+        { x: cx + halfW, y: cy - halfH }, // Bottom-right
+        { x: cx + halfW, y: cy + halfH }, // Top-right
+        { x: cx - halfW, y: cy + halfH }, // Top-left
+        { x: cx - halfW, y: cy - halfH }  // Close the rectangle
+    ];
+    
+    return {
+        type: 'polyline',
+        points: points
+    };
+}
+
+/**
+ * Create rectangle from corner and size
+ */
+function createRectangleFromCornerAndSize(x, y, width, height) {
+    const points = [
+        { x: x, y: y },                    // Starting corner
+        { x: x + width, y: y },            // Bottom-right
+        { x: x + width, y: y + height },   // Top-right
+        { x: x, y: y + height },           // Top-left
+        { x: x, y: y }                     // Close the rectangle
+    ];
+    
+    return {
+        type: 'polyline',
+        points: points
+    };
 }
