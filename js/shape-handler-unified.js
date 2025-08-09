@@ -1,23 +1,29 @@
 /*
- * Unified Shape Handler - Optimized Web1CAD System
+ * Unified Shape Handler - Enhanced Web1CAD System v0.250808
  * Developed by Oleh Korobkov
  * © 2025 Oleh Korobkov. All rights reserved.
  * 
  * OPTIMIZATION: Unifying all shape operations in one module
+ * INTEGRATION: Enhanced with compatibility for new rendering core
  */
 
 // === UNIFIED SHAPE OPERATIONS SYSTEM ===
 class ShapeHandler {
     constructor() {
         // Type caching for fast access
-        this.shapeTypes = new Set(['line', 'circle', 'arc', 'ellipse', 'polyline', 'polygon', 'rectangle', 'spline', 'text', 'point', 'hatch']);
+        this.shapeTypes = new Set(['line', 'circle', 'arc', 'ellipse', 'polyline', 'rectangle', 'spline', 'text', 'point', 'hatch']);
+        
+        // Enhanced rendering compatibility flag
+        this.enhancedRenderingAvailable = typeof drawShape === 'function';
         
         // Methods for each shape type (unified)
         this.operations = {
             line: {
                 draw: this.drawLine.bind(this),
                 render: this.renderLine.bind(this),
+                enhancedRender: this.enhancedRenderLine.bind(this),
                 hitTest: this.hitTestLine.bind(this),
+                hover: this.hoverLine.bind(this),
                 move: this.moveLine.bind(this),
                 copy: this.copyLine.bind(this),
                 getHandles: this.getLineHandles.bind(this),
@@ -29,6 +35,7 @@ class ShapeHandler {
             circle: {
                 draw: this.drawCircle.bind(this),
                 render: this.renderCircle.bind(this),
+                enhancedRender: this.enhancedRenderCircle.bind(this),
                 hitTest: this.hitTestCircle.bind(this),
                 move: this.moveCircle.bind(this),
                 copy: this.copyCircle.bind(this),
@@ -40,54 +47,68 @@ class ShapeHandler {
             },
             arc: {
                 draw: this.drawArc.bind(this),
+                enhancedRender: this.enhancedRenderArc.bind(this),
                 rotate: this.rotateArc.bind(this),
                 scale: this.scaleArc.bind(this),
                 mirror: this.mirrorArc.bind(this)
             },
             ellipse: {
                 draw: this.drawEllipse.bind(this),
+                enhancedRender: this.enhancedRenderEllipse.bind(this),
                 rotate: this.rotateEllipse.bind(this),
                 scale: this.scaleEllipse.bind(this),
                 mirror: this.mirrorEllipse.bind(this)
             },
             point: {
                 draw: this.drawPoint.bind(this),
+                enhancedRender: this.enhancedRenderPoint.bind(this),
                 rotate: this.rotatePoint.bind(this),
                 scale: this.scalePoint.bind(this),
                 mirror: this.mirrorPoint.bind(this)
             },
             text: {
                 draw: this.drawText.bind(this),
+                enhancedRender: this.enhancedRenderText.bind(this),
                 rotate: this.rotateText.bind(this),
                 scale: this.scaleText.bind(this),
                 mirror: this.mirrorText.bind(this)
             },
             polyline: {
                 draw: this.drawPolyline.bind(this),
+                enhancedRender: this.enhancedRenderPolyline.bind(this),
+                hitTest: this.hitTestPolyline.bind(this),
+                highlight: this.highlightPolyline.bind(this),
+                hover: this.hoverPolyline.bind(this),
+                area: this.areaPolyline.bind(this),
+                bounds: this.boundsPolyline.bind(this),
                 rotate: this.rotatePolyline.bind(this),
                 scale: this.scalePolyline.bind(this),
                 mirror: this.mirrorPolyline.bind(this)
             },
-            polygon: {
-                draw: this.drawPolygon.bind(this),
-                rotate: this.rotatePolygon.bind(this),
-                scale: this.scalePolygon.bind(this),
-                mirror: this.mirrorPolygon.bind(this)
-            },
             spline: {
                 draw: this.drawSpline.bind(this),
+                enhancedRender: this.enhancedRenderSpline.bind(this),
+                highlight: this.highlightSpline.bind(this),
+                hover: this.hoverSpline.bind(this),
+                outline: this.outlineSpline.bind(this),
+                hitTest: this.hitTestSpline.bind(this),
+                area: this.areaSpline.bind(this),
+                bounds: this.boundsSpline.bind(this),
+                getHandles: this.getSplineHandles.bind(this),
                 rotate: this.rotateSpline.bind(this),
                 scale: this.scaleSpline.bind(this),
                 mirror: this.mirrorSpline.bind(this)
             },
             hatch: {
                 draw: this.drawHatch.bind(this),
+                enhancedRender: this.enhancedRenderHatch.bind(this),
                 rotate: this.rotateHatch.bind(this),
                 scale: this.scaleHatch.bind(this),
                 mirror: this.mirrorHatch.bind(this)
             },
             rectangle: {
                 draw: this.drawRectangle.bind(this),
+                enhancedRender: this.enhancedRenderRectangle.bind(this),
                 rotate: this.rotateRectangle.bind(this),
                 scale: this.scaleRectangle.bind(this),
                 mirror: this.mirrorRectangle.bind(this),
@@ -165,9 +186,24 @@ class ShapeHandler {
         return Math.PI * shape.rx * shape.ry;
     }
 
-    areaPolygon(shape) {
+    areaRectangle(shape) {
+        if (shape.points && shape.points.length >= 4) {
+            // If rectangle is defined by points, use shoelace formula
+            let area = 0;
+            for (let i = 0; i < shape.points.length; i++) {
+                const j = (i + 1) % shape.points.length;
+                area += shape.points[i].x * shape.points[j].y;
+                area -= shape.points[j].x * shape.points[i].y;
+            }
+            return Math.abs(area) / 2;
+        } else {
+            // Standard width x height rectangle
+            return shape.width * shape.height;
+        }
+    }
+
+    areaHatch(shape) {
         if (!shape.points || shape.points.length < 3) return 0;
-        // Calculate area using shoelace formula
         let area = 0;
         for (let i = 0; i < shape.points.length; i++) {
             const j = (i + 1) % shape.points.length;
@@ -177,25 +213,33 @@ class ShapeHandler {
         return Math.abs(area) / 2;
     }
 
-    areaRectangle(shape) {
-        if (shape.points && shape.points.length >= 4) {
-            // If rectangle is defined by points, use shoelace formula
-            return this.areaPolygon(shape);
-        } else {
-            // Standard width x height rectangle
-            return shape.width * shape.height;
-        }
-    }
-
-    areaHatch(shape) {
-        return this.areaPolygon(shape);
-    }
-
     areaLine(shape) {
         return 0; // Lines have no area
     }
 
     areaPolyline(shape) {
+        // Check if polyline is closed (first and last points are the same or very close)
+        if (!shape.points || shape.points.length < 3) return 0;
+        
+        const firstPoint = shape.points[0];
+        const lastPoint = shape.points[shape.points.length - 1];
+        const distance = Math.sqrt(
+            Math.pow(lastPoint.x - firstPoint.x, 2) + 
+            Math.pow(lastPoint.y - firstPoint.y, 2)
+        );
+        
+        // Consider closed if distance between first and last point is less than 0.1 unit
+        if (distance < 0.1) {
+            let polylineArea = 0;
+            // Use shoelace formula for all points including the closing segment
+            for (let i = 0; i < shape.points.length; i++) {
+                const j = (i + 1) % shape.points.length;
+                polylineArea += shape.points[i].x * shape.points[j].y;
+                polylineArea -= shape.points[j].x * shape.points[i].y;
+            }
+            return Math.abs(polylineArea) / 2;
+        }
+        
         return 0; // Open polylines have no area
     }
 
@@ -357,7 +401,6 @@ class ShapeHandler {
                 }
                 break;
             case 'polyline':
-            case 'polygon':
             case 'spline':
             case 'hatch':
                 if (shape.points) {
@@ -427,7 +470,6 @@ class ShapeHandler {
                 }
                 break;
             case 'polyline':
-            case 'polygon':
             case 'spline':
             case 'hatch':
                 if (shape.points) {
@@ -513,7 +555,6 @@ class ShapeHandler {
                 }
                 break;
             case 'polyline':
-            case 'polygon':
             case 'spline':
             case 'hatch':
                 if (shape.points) {
@@ -570,10 +611,6 @@ class ShapeHandler {
         if (!shape.points || shape.points.length === 0) return false;
         return shape.points.every(point => 
             point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY);
-    }
-
-    isPolygonInWindow(shape, minX, maxX, minY, maxY) {
-        return this.isPolylineInWindow(shape, minX, maxX, minY, maxY);
     }
 
     isSplineInWindow(shape, minX, maxX, minY, maxY) {
@@ -916,21 +953,13 @@ class ShapeHandler {
         const textWidth = shape.content ? shape.content.length * textSize * 0.6 : textSize;
         const textHeight = textSize;
         
-        // Text corner handles
+        // Minimal text handles: insertion point + 1 extent handle
         handles.push({
             x: shape.x, y: shape.y, 
             type: 'endpoint', size: handleSize
         });
         handles.push({
-            x: shape.x + textWidth, y: shape.y, 
-            type: 'midpoint', size: handleSize
-        });
-        handles.push({
-            x: shape.x, y: shape.y - textHeight, 
-            type: 'midpoint', size: handleSize
-        });
-        handles.push({
-            x: shape.x + textWidth, y: shape.y - textHeight, 
+            x: shape.x + textWidth, y: shape.y + textHeight, 
             type: 'midpoint', size: handleSize
         });
         
@@ -1111,7 +1140,9 @@ class ShapeHandler {
         ctx.strokeStyle = '#ffff00';
         ctx.lineWidth = 3 / zoom;
         ctx.setLineDash([]);
-        ctx.font = `${(shape.size || 12) / zoom}px Arial`;
+        // FIXED: text as geometric shape
+        const worldSize = shape.size || 12; // World units
+        ctx.font = `${worldSize}px Arial`; // Use world size directly
         ctx.textAlign = 'left';
         ctx.textBaseline = 'bottom';
         ctx.save();
@@ -1271,6 +1302,25 @@ class ShapeHandler {
         return Math.abs(distance - shape.radius) < tolerance;
     }
 
+    hitTestPolyline(shape, x, y, tolerance = 5) {
+        if (!shape.points || shape.points.length < 2) return false;
+        
+        // Check distance to each line segment of the polyline
+        for (let i = 0; i < shape.points.length - 1; i++) {
+            const p1 = shape.points[i];
+            const p2 = shape.points[i + 1];
+            if (distanceToLineSegment(x, y, p1.x, p1.y, p2.x, p2.y) < tolerance) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    hitTestSpline(shape, x, y, tolerance = 5) {
+        // For spline, use the same logic as polyline since spline consists of connected points
+        return this.hitTestPolyline(shape, x, y, tolerance);
+    }
+
     moveCircle(shape, dx, dy) {
         shape.cx += dx;
         shape.cy += dy;
@@ -1309,11 +1359,15 @@ class ShapeHandler {
     }
 
     // === UTILITY METHODS ===
-    applyShapeStyles(ctx, shape, zoom) {
+    applyShapeStyles(ctx, shape, zoom, forPdfPreview = false) {
+        // Check for global PDF preview mode
+        const isPdfPreview = forPdfPreview || window.pdfPreviewMode;
+        
         // Optimized style setup
         const layer = this.getLayer(shape.layer);
         
-        ctx.strokeStyle = this.resolveColor(shape, layer);
+        ctx.strokeStyle = this.resolveColor(shape, layer, isPdfPreview);
+        ctx.fillStyle = this.resolveColor(shape, layer, isPdfPreview); // Also set fillStyle for text
         ctx.lineWidth = this.resolveLineweight(shape, layer) / zoom;
         this.setLineDash(ctx, shape, layer);
         
@@ -1322,8 +1376,18 @@ class ShapeHandler {
         }
     }
 
-    resolveColor(shape, layer) {
-        return shape.color === 'byLayer' ? (layer?.color || '#ffffff') : (shape.color || '#ffffff');
+    resolveColor(shape, layer, forPdfPreview = false) {
+        // Check for global PDF preview mode
+        const isPdfPreview = forPdfPreview || window.pdfPreviewMode;
+        
+        let color = shape.color === 'byLayer' ? (layer?.color || '#ffffff') : (shape.color || '#ffffff');
+        
+        // Convert white to black for PDF preview
+        if (isPdfPreview && window.convertWhiteToBlackForPreview) {
+            color = window.convertWhiteToBlackForPreview(color);
+        }
+        
+        return color;
     }
 
     resolveLineweight(shape, layer) {
@@ -1597,7 +1661,9 @@ class ShapeHandler {
 
     drawText(ctx, shape, zoom) {
         ctx.save();
-        ctx.font = `${(shape.size || 12) / zoom}px Arial`;
+        // FIXED: text as geometric shape
+        const worldSize = shape.size || 12; // World units
+        ctx.font = `${worldSize}px Arial`; // Use world size directly
         ctx.textAlign = 'left';
         ctx.textBaseline = 'bottom';
         
@@ -1619,17 +1685,6 @@ class ShapeHandler {
         for (let i = 1; i < shape.points.length; i++) {
             ctx.lineTo(shape.points[i].x, shape.points[i].y);
         }
-        ctx.stroke();
-    }
-
-    drawPolygon(ctx, shape, zoom) {
-        if (!shape.points || shape.points.length < 3) return;
-        ctx.beginPath();
-        ctx.moveTo(shape.points[0].x, shape.points[0].y);
-        for (let i = 1; i < shape.points.length; i++) {
-            ctx.lineTo(shape.points[i].x, shape.points[i].y);
-        }
-        ctx.closePath();
         ctx.stroke();
     }
 
@@ -1763,6 +1818,149 @@ class ShapeHandler {
     mirrorRectangle(shape, x1, y1, x2, y2) {
         // Mirror corner point
         return this.mirrorPoint(shape, x1, y1, x2, y2);
+    }
+
+    // === ENHANCED RENDERING METHODS ===
+    // Integration with new enhanced rendering core for consistency
+
+    enhancedRenderLine(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawLine(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderCircle(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawCircle(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderArc(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawArc(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderEllipse(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawEllipse(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderPoint(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawPoint(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderText(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawText(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderPolyline(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawPolyline(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderSpline(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawSpline(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderHatch(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawHatch(ctx, shape, zoom, isSelected);
+    }
+
+    enhancedRenderRectangle(ctx, shape, zoom, isSelected = false) {
+        if (typeof drawShape === 'function') {
+            return drawShape(ctx, shape, zoom, isSelected);
+        }
+        return this.drawRectangle(ctx, shape, zoom, isSelected);
+    }
+
+    // Enhanced rendering dispatcher
+    enhancedRender(shapeType, ctx, shape, zoom, isSelected = false) {
+        const operation = this.operations[shapeType]?.enhancedRender;
+        if (operation) {
+            return operation(ctx, shape, zoom, isSelected);
+        }
+        
+        // Fallback to regular drawing
+        return this.execute('draw', shapeType, ctx, shape, zoom, isSelected);
+    }
+    
+    // HOVER HIGHLIGHTING METHODS
+    
+    /**
+     * Draw hover highlight for line
+     */
+    hoverLine(ctx, shape, zoom) {
+        ctx.strokeStyle = '#00ccff';
+        ctx.lineWidth = 2 / zoom;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(shape.x1, shape.y1);
+        ctx.lineTo(shape.x2, shape.y2);
+        ctx.stroke();
+        return true;
+    }
+    
+    /**
+     * Draw hover highlight for polyline
+     */
+    hoverPolyline(ctx, shape, zoom) {
+        if (!shape.points || shape.points.length === 0) return false;
+        
+        ctx.strokeStyle = '#00ccff';
+        ctx.lineWidth = 2 / zoom;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(shape.points[0].x, shape.points[0].y);
+        for (let i = 1; i < shape.points.length; i++) {
+            ctx.lineTo(shape.points[i].x, shape.points[i].y);
+        }
+        ctx.stroke();
+        return true;
+    }
+    
+    /**
+     * Draw hover highlight for spline
+     */
+    hoverSpline(ctx, shape, zoom) {
+        if (!shape.points || shape.points.length === 0) return false;
+        
+        ctx.strokeStyle = '#00ccff';
+        ctx.lineWidth = 2 / zoom;
+        ctx.setLineDash([]);
+        
+        // Use smooth spline drawing if available
+        if (typeof drawSmoothSpline === 'function') {
+            drawSmoothSpline(ctx, shape.points);
+        } else {
+            // Fallback to polyline-style drawing
+            ctx.beginPath();
+            ctx.moveTo(shape.points[0].x, shape.points[0].y);
+            for (let i = 1; i < shape.points.length; i++) {
+                ctx.lineTo(shape.points[i].x, shape.points[i].y);
+            }
+            ctx.stroke();
+        }
+        return true;
     }
 }
 
