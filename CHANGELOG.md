@@ -1,5 +1,55 @@
 # Web1CAD Changelog
 
+## Version 0.250808 - August 8, 2025
+
+### ✨ New Features & Improvements
+- **Text Rendering Enhancement**: Fixed text scaling to behave as geometric shapes in coordinate system
+- **Professional CAD-Style Color Management**: Implemented automatic white-to-black color conversion for PDF export
+- **Polygon Tool Redesign**: Replaced dropdown menu with two separate buttons for inscribed and circumscribed polygons
+- **Visual Interface Improvements**: Updated polygon button icons with intuitive geometric symbols (⌼ and ⌾)
+- **Code Quality**: Converted all code comments to English for international compatibility
+- **Legal Compliance**: Removed all third-party software trademark references
+- **Button System Enhancement**: Fixed LWT button styling and button initialization system
+
+### 🔧 Technical Changes
+- Enhanced text rendering functions to use geometric scaling approach
+- PDF export now converts white colors to black for better visibility on white backgrounds
+- Preview functions updated with proper color conversion logic
+- All Ukrainian comments translated to English
+- Replaced proprietary software references with generic CAD terminology
+- Polygon workflow simplified from 4 steps to 3 steps (removed type selection step)
+- Updated button highlighting system to work with new polygon buttons
+- Removed deprecated CSS styles and cleaned up polygon selector code
+
+### 🐛 Bug Fixes
+- Text now properly scales with zoom like other geometric shapes
+- Fixed text size calculations in coordinate transformation system
+- LWT button now matches toolbar theme styling
+- Grid button shows correct initial active state
+- Polygon preview now works correctly with step-based workflow
+- Improved text visibility in PDF exports and previews
+
+## Version 0.250805 - August 5, 2025
+
+### 🎨 UI Improvements
+- **Enhanced rotate function** with real-time preview and angle input window
+- **Fixed LWT button styling** - removed green background, added line indicator
+- **Improved coordinate system** - full support for negative coordinates
+- **Updated default zoom** to 3.7x for realistic millimeter scale
+
+### 🔧 Technical Enhancements  
+- **Enhanced polyline/PLINE commands** with negative coordinate support
+- **Removed New Drawing function** for streamlined workflow
+- **Improved regex patterns** for coordinate parsing
+- **Better CAD compatibility** for command system
+
+### 🐛 Bug Fixes
+- Fixed LWT button green background issue
+- Fixed coordinate input validation for negative values
+- Improved rotate function workflow and preview system
+
+---
+
 ## Version 0.250804 - August 4, 2025
 
 ### 📋 Documentation & Technical Updates
