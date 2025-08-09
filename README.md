@@ -1,6 +1,6 @@
-# Web1CAD - Advanced 2D CAD System
+# Web1CAD Professional 2D CAD System
 
-**Version 0.250804** | **Release Date**: August 4, 2025
+**Version 0.250808** | **Release Date**: August 8, 2025
 
 A powerful browser-based 2D CAD system developed by Oleh Korobkov.
 
@@ -95,7 +95,7 @@ Web1CAD ver.0.250803/
 
 ## 📋 Version Information
 
-**Current Version**: 0.250804 (August 4, 2025)
+**Current Version**: 0.250808 (August 8, 2025)
 - Advanced vector PDF export with area selection
 - Multiple paper format support (A0-A4, Letter, Legal, Tabloid)
 - Enhanced layer management system
@@ -226,6 +226,6 @@ This software is proprietary and confidential. Unauthorized use, reproduction, o
 
 - **Project**: Web1CAD Advanced 2D CAD System
 - **Developer**: Oleh Korobkov
-- **Version**: 0.250804
+- **Version**: 0.250808
 - **Release Date**: August 4, 2025
 - **Features**: Vector PDF Export, Layer Management, Command Interface
