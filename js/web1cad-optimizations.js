@@ -1458,21 +1458,10 @@ class Web1CADOptimizer {
     // === EVENT SYSTEM ===
     initializeEventSystem() {
         if (window.UnifiedEventSystem && window.canvas) {
-            // Remove existing event listeners (optional - may conflict)
-            // this.removeExistingEventListeners();
-            
             window.unifiedEventSystem = new window.UnifiedEventSystem(window.canvas);
             this.optimizations.unifiedEventSystem = true;
             console.log('✅ Unified Event System initialized');
         }
-    }
-
-    removeExistingEventListeners() {
-        // Carefully remove existing listeners (if needed)
-        const newCanvas = window.canvas.cloneNode(true);
-        window.canvas.parentNode.replaceChild(newCanvas, window.canvas);
-        window.canvas = newCanvas;
-        window.ctx = newCanvas.getContext('2d');
     }
 
     // === SYSTEM INTEGRATION ===
@@ -1586,8 +1575,11 @@ class Web1CADOptimizer {
     // === PERFORMANCE MONITORING ===
     setupPerformanceMonitoring() {
         if (window.performanceMonitor) {
-            // Monitor critical functions
-            const criticalFunctions = ['redraw', '_redraw', 'renderStandardShapes'];
+            // Monitor critical functions including enhanced rendering
+            const criticalFunctions = [
+                'redraw', '_redraw', 'renderStandardShapes', 
+                'drawShape', 'drawEnhancedText', 'drawEnhancedMText'
+            ];
             
             for (const funcName of criticalFunctions) {
                 if (window[funcName]) {
