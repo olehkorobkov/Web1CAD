@@ -1,6 +1,6 @@
 /*
  * Optimized Command System Module - Web1CAD System
- * Version 0.250801 (August 1, 2025)
+ * Version 250512 (December 5, 2025)
  * Developed by Oleh Korobkov
  * © 2025 Oleh Korobkov. All rights reserved.
  * Streamlined and optimized for performance and maintainability
@@ -123,7 +123,7 @@ const COMMAND_CONFIGS = {
     text: {
         formats: [
             { pattern: /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\s+(.+)$/, 
-              create: (m) => ({ type: 'text', x: +m[1], y: +m[2], content: m[3], size: 12 / (window.zoom || 1) }) }
+              create: (m) => ({ type: 'text', x: +m[1], y: +m[2], content: m[3], size: 12 }) }
         ],
         usage: 'text x,y "content" (supports negative coordinates)'
     }
@@ -278,7 +278,7 @@ function executeSingleCommand(cmd) {
             return true;
             
         case 'help':
-            addToHistory('Commands: line x1,y1 x2,y2 | circle cx,cy r | arc cx,cy r a1 a2 | rectangle x1,y1 x2,y2 | text x,y "content" or just text | grid on/off | zoom fit | select all | help');
+            addToHistory('Commands: line x1,y1 x2,y2 | circle cx,cy r | arc cx,cy r a1 a2 | rectangle x1,y1 x2,y2 | polyline ... | explode | grid on/off | zoom fit | select all | help');
             return true;
             
         case 'text':
@@ -291,6 +291,11 @@ function executeSingleCommand(cmd) {
             // Try pattern matching for text with coordinates
             break;
             
+        case 'explode':
+        case 'expload':
+            explodeSelectedShapes();
+            return true;
+
         default:
             // Try to set tool mode
             if (['line', 'circle', 'arc', 'rectangle', 'polygon', 'polyline', 'pline', 'ellipse', 'spline', 'hatch', 'point', 'text'].includes(command)) {

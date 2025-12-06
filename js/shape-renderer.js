@@ -1,6 +1,6 @@
-+6/*
+/*
  * Shape Rendering Module - Web1CAD System
- * Version 0.250808 (August 8, 2025) - Enhanced Rendering Core
+ * Version 0.250818 (August 18, 2025) - Enhanced Rendering Core
  * Developed by Oleh Korobkov
  * © 2025 Oleh Korobkov. All rights reserved.
  * If you see this code elsewhere, it was copied.
