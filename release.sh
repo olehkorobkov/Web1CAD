@@ -3,7 +3,7 @@
 # Web1CAD Professional Release Script
 # © 2024 Web1CAD Professional - Advanced 2D CAD Technology
 
-VERSION="0.250808"
+VERSION="250512"
 BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
 
 echo "🚀 Web1CAD Professional Release Manager"

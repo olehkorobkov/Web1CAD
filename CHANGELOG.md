@@ -1,6 +1,150 @@
 # Web1CAD Changelog
 
-## Version 0.250808 - August 8, 2025
+## Version 250512 Beta (December 5, 2025) - PDF EXPORT FIX & UI ICONS UPDATE
+
+### 🐛 Critical Bug Fixes
+- **PDF Export Text Rendering**: Fixed text appearing several times smaller in exported PDFs
+  - Corrected font size calculation from millimeters to points (72 points per inch)
+  - Fixed text positioning with proper baseline alignment for Y-axis inversion
+  - Synchronized preview rendering with final PDF output
+  - Text now matches canvas display in exported documents
+
+### 🔧 Technical Improvements
+- **Text Size Calculation**: Removed zoom-dependent sizing in command system
+  - Changed from `size: 12 / zoom` to `size: 12` for consistent world units
+  - Implemented proper mm-to-points conversion: `fontSizeMM * (72 / 25.4)`
+  - Text maintains consistent size regardless of viewport zoom level
+
+- **Coordinate System Fixes**: Corrected text baseline for PDF coordinate system
+  - Changed baseline from 'alphabetic' to 'bottom' to compensate for Y-inversion
+  - Unified preview and final rendering approaches
+  - Fixed discrepancy between canvas preview and exported PDF
+
+### 🎨 UI/UX Improvements
+- **File Operation Buttons**: Restored functionality of Save/Open buttons
+  - Added window exports for `openDrawing` and `saveDrawing` functions
+  - Fixed onclick handlers not finding functions
+  
+- **Toolbar Icons Update**: Modernized toolbar with new icons
+  - Open button: 📁 → 🗁 (open folder outline)
+  - Save button: 💾 → 🖫 (hard disk symbol)
+  - Polygon button: ⌬ → ⬠ (outlined pentagon)
+  - Arc button: ∩ → ⌒ (arc upward)
+  - Improved visual consistency across toolbar
+
+### 🚀 User Experience
+- **PDF Export Quality**: Text now renders correctly in exported PDFs
+- **File Operations**: Save and Open buttons now work reliably
+- **Visual Polish**: Clearer, more professional toolbar icons
+
+---
+
+## Version 250512 Beta (December 5, 2025) - UI ENHANCEMENT & POLYGON DROPDOWN UPDATE
+
+### 🎨 UI/UX Improvements
+- **Polygon Tool Enhancement**: Replaced two separate polygon buttons with single dropdown interface
+  - Implemented modern dropdown menu for polygon type selection
+  - Added professional styling with hover effects and smooth transitions
+  - Created unified polygon button with expandable options (Inscribed ⌼ / Circumscribed ⌾)
+  - Dropdown appears over canvas workspace for space efficiency
+  - Auto-close functionality after selection and when clicking outside
+
+### 🔧 Technical Enhancements
+- **CSS Improvements**: Enhanced dropdown styling with gradient backgrounds and professional appearance
+- **JavaScript Optimization**: Improved event handling for dropdown toggle and polygon selection
+- **Code Organization**: Better separation of polygon functionality with dedicated dropdown functions
+- **Performance**: Smooth animations and responsive UI interactions
+
+### 🚀 User Experience
+- **Space Efficiency**: Reduced toolbar clutter by combining polygon tools
+- **Visual Feedback**: Button icons update based on selected polygon type
+- **Intuitive Design**: Modern dropdown interface follows CAD software conventions
+- **Accessibility**: Clear tooltips and visual indicators for tool selection
+
+---
+
+## Version 0.250818 Beta (August 18, 2025) - PROJECT CLEANUP & OPTIMIZATION UPDATE
+
+### 🧹 Project Cleanup
+- **Removed unnecessary files**: Cleaned up 24+ redundant and empty files
+  - Empty test files and diagnostic scripts
+  - Unused development configuration files
+  - Excessive development documentation
+  - Web deployment files for local development
+  - Unused backup files and diagnostic modules
+
+### 📁 File Structure Optimization
+- **Streamlined project structure**: Reduced from 40+ to 16 essential files
+- **Removed empty directories**: Cleaned up config/ and other unused folders
+- **Consolidated documentation**: Kept only essential documentation files
+- **Optimized JavaScript modules**: Removed redundant diagnostic and backup files
+
+### 🚀 Performance Improvements
+- **Reduced project footprint**: Significantly smaller download and storage size
+- **Faster loading times**: Fewer files to process during application startup
+- **Cleaner codebase**: Easier maintenance and development
+
+### 🔧 Build System Updates
+- **Updated version numbers**: All references updated to 250512
+- **Maintained compatibility**: All core functionality preserved
+- **Enhanced organization**: Better file structure for production deployment
+
+## Version 0.250812 Beta (August 12, 2025) - RENDER STABILITY UPDATE
+
+### 🔧 Major Fixes
+- **Fixed critical line rendering issues at high zoom levels**
+  - Resolved "glitchy line display at zoom" problem reported by users
+  - Replaced unstable `lineWidth = 1/zoom` calculations with safe mathematical operations
+  - Lines now display consistently at all zoom levels (0.001x to 1000x)
+
+### ⚡ Performance Improvements
+- **Implemented viewport culling system**
+  - Objects outside the visible area are no longer rendered
+  - Significant performance boost when working with many objects
+  - Automatic culling statistics and monitoring
+
+### 🛠️ New Systems
+- **RenderStabilizer Class** (`js/render-stabilizer.js`)
+  - Safe line width calculations with mathematical bounds checking
+  - Coordinate precision management for extreme zoom scenarios
+  - Stabilized canvas transformations and clearing operations
+  - Shape visibility detection for viewport culling
+
+- **RenderDiagnostics System** (`js/render-diagnostics.js`)
+  - Real-time frame rate monitoring and performance analysis
+  - Automatic detection of rendering issues and precision problems
+  - Console commands for debugging: `debugRender()`, `testRenderStability()`, `diagnoseRendering()`, `fixRenderingIssues()`
+  - Background monitoring with automatic issue correction
+
+### 🔍 Enhanced Debugging
+- **Console Debug Functions**
+  - `debugRender()` - Display current render state and statistics
+  - `testRenderStability()` - Test rendering at various zoom levels
+  - `diagnoseRendering()` - Comprehensive system analysis
+  - `fixRenderingIssues()` - Automatic problem resolution
+
+### 📊 Technical Improvements
+- **Safe Mathematical Operations**
+  - MIN_LINE_WIDTH: 0.1 pixels (prevents invisible lines)
+  - MAX_LINE_WIDTH: 10 pixels (prevents overly thick lines)
+  - MAX_SAFE_ZOOM: 1000x (prevents coordinate overflow)
+  - Precision threshold: 1e-10 (detects coordinate precision loss)
+
+### 🌐 Code Quality
+- **Complete English translation** of all code comments and documentation
+- **Improved error handling** with fallback rendering modes
+- **Enhanced system integration** with backward compatibility
+
+### 🧪 Testing
+- **Automated stability testing** at extreme zoom levels
+- **Performance monitoring** with FPS tracking
+- **Issue detection** and automatic correction systems
+
+---
+
+## Previous Versions
+
+## Version 0.250808 Beta (August 8, 2025) - UI Enhancement & Polygon Tool Redesign
 
 ### ✨ New Features & Improvements
 - **Text Rendering Enhancement**: Fixed text scaling to behave as geometric shapes in coordinate system

@@ -1,10 +1,25 @@
 # Web1CAD Version Information
 
-**Current Version**: 0.250808 Beta  
-**Release Date**: August 8, 2025  
+**Current Version**: 250512 Beta  
+**Release Date**: December 5, 2025  
 **Version Format**: YY.MMDD (Year.MonthDay)
 
 ## Version History
+- **250512** (December 5, 2025) - PDF Export Fix & UI Icons Update
+- **250512** (December 5, 2025) - UI Enhancement & Polygon Dropdown Update
+- **0.250818** (August 18, 2025) - Project Cleanup & Optimization Update
+- **0.250812** (August 12, 2025) - Render Stability & Performance Update
+  - Implemented advanced render stabilization system with RenderStabilizer class
+  - Fixed critical line rendering issues at high zoom levels (lineWidth instability)
+  - Added viewport culling for improved performance with many objects
+  - Integrated comprehensive render diagnostics and monitoring system
+  - Resolved "glitchy line display at zoom" problem reported by users
+  - Enhanced coordinate precision management for extreme zoom scenarios
+  - Added automatic render issue detection and correction
+  - Implemented safe mathematical operations for zoom calculations
+  - Created render performance monitoring with FPS tracking
+  - All rendering functions now use stabilized line width calculations
+  
 - **0.250808** (August 8, 2025) - UI Enhancement & Polygon Tool Redesign
   - Fixed text scaling to behave as geometric shapes
   - Implemented professional CAD-style white-to-black color conversion for PDF export

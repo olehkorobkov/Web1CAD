@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
     Web1CAD - Professional 2D CAD System
-    Version 0.250808 Beta (August 8, 2025) - TEXT EDITING UPDATE
+    Version 250512 Beta (December 5, 2025) - PDF EXPORT FIX & UI ICONS UPDATE
     Developed by Oleh Korobkov
     © 2025 Oleh Korobkov. All rights reserved.
     Unauthorized use or distribution is prohibited.
@@ -25,10 +25,15 @@
         <div class="toolbar-button" title="Polyline" onclick="setMode('polyline')">L</div>
         <div class="toolbar-button" title="Circle" onclick="setMode('circle')">◯</div>
         <div class="toolbar-button" title="Ellipse" onclick="setMode('ellipse')">⬭</div>
-        <div class="toolbar-button" title="Arc" onclick="setMode('arc')">∩</div>
+        <div class="toolbar-button" title="Arc" onclick="setMode('arc')">⌒</div>
         <div class="toolbar-button" title="Rectangle" onclick="setMode('rectangle')">▭</div>
-        <div class="toolbar-button" title="Inscribed Polygon" onclick="setPolygonMode('inscribed')">⌼</div>
-        <div class="toolbar-button" title="Circumscribed Polygon" onclick="setPolygonMode('circumscribed')">⌾</div>
+        <div class="polygon-dropdown">
+            <div class="toolbar-button" title="Polygon" onclick="togglePolygonDropdown()" id="polygonBtn">⬠</div>
+            <div class="polygon-dropdown-menu" id="polygonDropdown">
+                <div class="dropdown-item" onclick="setPolygonMode('inscribed')" title="Inscribed Polygon">⌼</div>
+                <div class="dropdown-item" onclick="setPolygonMode('circumscribed')" title="Circumscribed Polygon">⌾</div>
+            </div>
+        </div>
         <div class="toolbar-button" title="Spline" onclick="setMode('spline')">∿</div>
         <div class="toolbar-button" title="Hatch" onclick="setMode('hatch')">▧</div>
         <div class="toolbar-button" title="Point" onclick="setMode('point')">•</div>
@@ -38,12 +43,12 @@
         <div class="toolbar-separator"></div>
         
         <!-- File Operations -->
-        <div class="toolbar-button" title="Open Drawing" onclick="openDrawing()">📂</div>
-        <div class="toolbar-button" title="Save Drawing" onclick="saveDrawing()">💾</div>
+        <div class="toolbar-button" title="Open Drawing" onclick="openDrawing()">🗁</div>
+        <div class="toolbar-button" title="Save Drawing" onclick="saveDrawing()">🖫</div>
         <div class="toolbar-button" title="Area to PDF" onclick="setMode('area_to_pdf')">PDF</div>
         
-        <!-- Separator -->
-        <div class="toolbar-separator"></div>
+    <!-- Separator -->
+    <div class="toolbar-separator"></div>
         
         <!-- Integrated Layer Panel -->
         <div class="layer-panel-integrated" title="Current Layer">
@@ -294,6 +299,7 @@
             <div class="toolbar-button" title="Copy" onclick="startCopyCommand()">⎘</div>
             <div class="toolbar-button" title="Rotate" onclick="startRotateCommand()">↻</div>
             <div class="toolbar-button" title="Scale" onclick="startScaleCommand()">⚏</div>
+            <div class="toolbar-button" title="Explode (break into parts)" onclick="explodeSelectedShapes()">💥</div>
             <div class="toolbar-button" title="Delete" onclick="deleteSelectedShapes()">⌫</div>
         </div>
 
@@ -370,10 +376,33 @@
 <!-- JavaScript modules -->
 <!-- <script src="js/secure-core.js"></script> -->
 <script src="js/debug-system.js"></script>
-<script src="js/geometry-utils.js"></script>
 <script src="js/shape-renderer.js"></script>
 <script src="js/command-system.js"></script>
-<script src="js/cad.js"></script>
+
+<script src="js/cad/core/auto_save.js"></script>
+<script src="js/cad/core/constants.js"></script>
+<script src="js/cad/core/events.js"></script>
+<script src="js/cad/core/layers.js"></script>
+<script src="js/cad/core/pdf-export.js"></script>
+<script src="js/cad/core/undo.js"></script>
+<script src="js/cad/core/utils.js"></script>
+
+<script src="js/cad/ui/properties-panel.js"></script>
+<script src="js/cad/ui/command-system.js"></script>
+
+<script src="js/cad/commands/copy.js"></script>
+<script src="js/cad/commands/move.js"></script>
+<script src="js/cad/commands/rotate.js"></script>
+<script src="js/cad/commands/scale.js"></script>
+
+<script src="js/cad/geometry/primitives.js"></script>
+<script src="js/cad/geometry/operations.js"></script>
+<script src="js/cad/geometry/utils.js"></script>
+
+<script src="js/cad/rendering/performance.js"></script>
+<script src="js/cad/rendering/renderer.js"></script>
+<script src="js/cad/rendering/timing.js"></script>
+<script src="js/cad/rendering/viewport.js"></script>
 
 <!-- jsPDF library for vector PDF export (local copy) -->
 <script src="js/jspdf.min.js"></script>
