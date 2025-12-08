@@ -179,12 +179,12 @@ function saveDrawing() {
         }
         
         const data = {
-            version: '250512',
+            version: '251207',
             title: 'Web1CAD Drawing',
             created: new Date().toISOString(),
             author: 'Oleh Korobkov',
             copyright: '© 2025 Oleh Korobkov. All rights reserved.',
-            software: 'Web1CAD - Professional 2D CAD System 250512 Beta',
+            software: 'Web1CAD - Professional 2D CAD System 251207 Beta',
             license: 'Proprietary - Unauthorized use prohibited',
             shapes: shapes,
             layers: layers,

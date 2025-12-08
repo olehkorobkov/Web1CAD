@@ -17,7 +17,7 @@ function performAutoSave() {
     if (hasUnsavedChanges && shapes.length > 0) {
         try {
             const data = {
-                version: '250512',
+                version: '251207',
                 autoSave: true,
                 timestamp: new Date().toISOString(),
                 shapes: shapes,
