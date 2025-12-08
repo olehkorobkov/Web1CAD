@@ -696,6 +696,31 @@ function _redraw() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
+// ============================================================================
+// REDRAW WRAPPER - Optimized rendering with requestAnimationFrame
+// ============================================================================
+
+let pendingDraw = false;
+
+function redraw() {
+    if (!pendingDraw) {
+        pendingDraw = true;
+        requestAnimationFrame(() => {
+            try {
+                _redraw();
+            } catch (error) {
+                console.error('Error during redraw:', error);
+                if (typeof window.renderDiagnostics !== 'undefined') {
+                    window.renderDiagnostics.reportError('redraw_error', error);
+                }
+            } finally {
+                pendingDraw = false;
+            }
+        });
+    }
+}
+
+window.redraw = redraw;
 
 // === Helper functions for drawing previews ===
 function drawEllipsePreview(ctx, cursorX, cursorY) {
@@ -912,7 +937,7 @@ canvas.addEventListener('mousedown', (e) => {
                 isDrawing = true;
                 showLengthInput(e.offsetX, e.offsetY);
                 updateLengthInputLabel('Number of sides:');
-                updateHelpBar('Step 2/3: Enter number of sides (3-50) for polygon');
+                updateHelpBar('Step 2/3: Enter number of sides (3-99) for polygon');
                 addToHistory(`Polygon center set at (${x.toFixed(2)}, ${y.toFixed(2)}) - enter number of sides`);
             } else if (polygonStep === 2) {
                 // Second click: set radius and rotation based on distance and angle from center
@@ -933,9 +958,7 @@ canvas.addEventListener('mousedown', (e) => {
             handleSplineMode(x, y, e);
             break;
         case 'hatch':
-            hatchPoints.push({ x, y });
-            addToHistory(`Hatch point ${hatchPoints.length} at (${x.toFixed(2)}, ${y.toFixed(2)})`);
-            redraw();
+            handleHatchMode(x, y, e);
             break;
         case 'point':
             addShape(createShapeWithProperties({ type: 'point', x, y }));
@@ -944,17 +967,29 @@ canvas.addEventListener('mousedown', (e) => {
             redraw();
             break;
         case 'text':
+            // Create temporary text shape and open professional edit dialog
+            const tempTextShape = {
+                type: 'text',
+                x: x,
+                y: y,
+                content: '',
+                size: 12,
+                height: 12,
+                align: 'left',
+                rotation: 0,
+                color: currentColor,
+                lineWeight: currentLineWeight,
+                layer: currentLayer
+            };
             textPosition = { x, y };
-            // Show text input dialog
-            const [sx, sy] = worldToScreen(x, y);
-            textInputOverlay.style.left = `${sx}px`;
-            textInputOverlay.style.top = `${sy}px`;
-            textInputOverlay.style.display = 'block';
-            updateHelpBar('Step 2/2: Enter text and click OK or press Enter to place');
-            textInput.focus();
+            // Store as pending text (will be added when dialog is confirmed)
+            window.pendingTextShape = tempTextShape;
+            startTextEditing(tempTextShape, -1); // -1 indicates new text
             break;
         case 'paste':
-            pasteShapes(x, y);
+            if (typeof pasteShapes === 'function') {
+                pasteShapes(x, y);
+            }
             break;
         case 'rotate':
             handleRotateMode(x, y, e);
@@ -972,11 +1007,6 @@ canvas.addEventListener('mouseup', (e) => {
     if (e.button === 1) { // Middle mouse button
         isPanning = false;
         canvas.style.cursor = 'crosshair';
-        return;
-    }
-
-    if (isMoving) {
-        isMoving = false;
         return;
     }
 
@@ -1084,20 +1114,6 @@ canvas.addEventListener('mousemove', (e) => {
         panStartX = e.clientX;
         panStartY = e.clientY;
         redraw();
-        return;
-    }
-
-    if (isMoving) {
-        let [x, y] = screenToWorld(e.offsetX, e.offsetY);
-        const osnap = findOsnap(x, y);
-        if (osnap) [x, y] = [osnap.x, osnap.y];
-        [x, y] = applySnap(x, y);
-        
-        const dx = x - moveStartX;
-        const dy = y - moveStartY;
-        moveSelectedShapes(dx, dy);
-        moveStartX = x;
-        moveStartY = y;
         return;
     }
 
