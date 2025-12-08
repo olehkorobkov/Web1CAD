@@ -9,8 +9,7 @@ if (!commandInput || !commandHistoryElement || !cursorCoordsElement || !helpBarE
 
 let statusTimeout = null;
 
-const canvas = document.getElementById('cadCanvas');
-const ctx = canvas.getContext('2d');
+// canvas and ctx are now defined in /rendering/context.js
 
 const selectionWindow = document.getElementById('selectionWindow');
 const textInputOverlay = document.getElementById('textInputOverlay');
@@ -18,7 +17,7 @@ const textInput = document.getElementById('textInput');
 const lengthInputOverlay = document.getElementById('lengthInput');
 const lengthInput = document.getElementById('lengthValue');
 
-let mode = 'select';
+// mode is now defined in /core/state.js
 
 let showGrid = true;
 let orthoMode = false;
@@ -370,6 +369,55 @@ function initDragProperties() {
             panel.style.top = currentY + 'px';
         }
     });
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            panel.classList.remove('dragging');
+        }
+    });
+}
+
+// === HATCH PANEL ===
+function toggleHatchPanel() {
+    const panel = document.getElementById('hatchPanel');
+    if (panel.style.display === 'none' || panel.style.display === '') {
+        panel.style.display = 'block';
+        initDragHatch();
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function initDragHatch() {
+    const panel = document.getElementById('hatchPanel');
+    const header = document.getElementById('hatchPanelHeader');
+    let isDragging = false;
+    let currentX, currentY, initialX, initialY;
+    const rect = panel.getBoundingClientRect();
+    let panelX = rect.left;
+    let panelY = rect.top;
+    
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        isDragging = true;
+        panel.classList.add('dragging');
+        initialX = e.clientX - panelX;
+        initialY = e.clientY - panelY;
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+            panelX = currentX;
+            panelY = currentY;
+            panel.style.position = 'fixed';
+            panel.style.left = currentX + 'px';
+            panel.style.top = currentY + 'px';
+        }
+    });
+    
     document.addEventListener('mouseup', () => {
         if (isDragging) {
             isDragging = false;
@@ -1250,164 +1298,7 @@ function moveSelectedShapes(dx, dy) {
     redraw();
 }
 
-// Update setMode to handle toolbar button highlighting
-function setMode(m) {
-    // Clear all active buttons
-    document.querySelectorAll('.toolbar-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    mode = m;
-    
-    // Highlight the active tool button
-    const toolButtons = {
-        'line': 'div[onclick="setMode(\'line\')"]',
-        'polyline': 'div[onclick="setMode(\'polyline\')"]',
-        'circle': 'div[onclick="setMode(\'circle\')"]',
-        'ellipse': 'div[onclick="setMode(\'ellipse\')"]',
-        'arc': 'div[onclick="setMode(\'arc\')"]',
-        'rectangle': 'div[onclick="setMode(\'rectangle\')"]',
-        'spline': 'div[onclick="setMode(\'spline\')"]',
-        'hatch': 'div[onclick="setMode(\'hatch\')"]',
-        'point': 'div[onclick="setMode(\'point\')"]',
-        'text': 'div[onclick="setMode(\'text\')"]',
-        'area_to_pdf': 'div[onclick="setMode(\'area_to_pdf\')"]'
-    };
-    
-    // Special handling for polygon mode - highlight the appropriate polygon button
-    if (m === 'polygon') {
-        if (polygonRadiusType === 'inscribed') {
-            const inscribedBtn = document.querySelector('div[onclick="setPolygonMode(\'inscribed\')"]');
-            if (inscribedBtn) inscribedBtn.classList.add('active');
-        } else {
-            const circumscribedBtn = document.querySelector('div[onclick="setPolygonMode(\'circumscribed\')"]');
-            if (circumscribedBtn) circumscribedBtn.classList.add('active');
-        }
-    } else if (toolButtons[m]) {
-        const activeButton = document.querySelector(toolButtons[m]);
-        if (activeButton) {
-            activeButton.classList.add('active');
-        }
-    }
-    
-    isDrawing = false;
-    previewX = undefined;
-    previewY = undefined;
-    startX = undefined;
-    startY = undefined;
-    polylinePoints = [];
-    polylinePreviewActive = false; // Reset preview flag when changing modes
-    
-    // Reset ellipse drawing state
-    ellipseDrawingStep = 0;
-    ellipseCenter = { x: 0, y: 0 };
-    ellipseMajorRadius = 0;
-    ellipsePreviewActive = false;
-    
-    // Reset arc drawing state
-    arcPoints = [];
-    arcDrawingStep = 0;
-    arcPreviewActive = false;
-    
-    splinePoints = [];
-    splinePreviewActive = false;
-    splineStep = 0;
-    splineDirection = { x: 0, y: 0 };
-    hatchPoints = [];
-    
-    // Reset move state when changing modes (unless switching to move mode)
-    if (m !== 'move' && typeof resetMoveMode === 'function') {
-        resetMoveMode();
-    }
-    
-    // Reset copy state when changing modes (unless switching to copy mode)
-    if (m !== 'copy' && typeof resetCopyMode === 'function') {
-        resetCopyMode();
-    }
-    
-    // Hide length input when changing modes
-    hideLengthInput();
-    
-    // Initialize area_to_pdf mode
-    if (m === 'area_to_pdf') {
-        areaToPdfMode = true;
-        areaToPdfStep = 0;
-        areaToPdfStartX = null;
-        areaToPdfStartY = null;
-        areaToPdfEndX = null;
-        areaToPdfEndY = null;
-        stopAreaToPdfBlinking(); // Stop any existing blinking
-    } else if (areaToPdfMode) {
-        // Reset area_to_pdf mode when switching to other modes
-        resetAreaToPdfMode();
-    }
-
-    // Set appropriate help message
-    const statusMessages = {
-        'select': 'Selection mode (default) - Click objects to select, drag to select area',
-        'line': 'Step 1/2: Click start point for line',
-        'polyline': 'Step 1/?: Click first point for polyline (Escape to finish)',
-        'circle': 'Step 1/2: Click center point for circle',
-        'ellipse': 'Step 1/3: Click center point for ellipse',
-        'arc': 'Step 1/3: Click start point for arc',
-    'rectangle': 'Rectangle: Click first corner, then enter Width → Height → Angle (or click second corner)',
-        'polygon': 'Step 1/4: Click center point for polygon',
-        'spline': 'Step 1/?: Click first point for spline (use double-click or Escape to finish)',
-        'hatch': 'Click points to define hatch boundary',
-        'point': 'Step 1/?: Click to place point',
-        'text': 'Step 1/2: Click to place text',
-        'move': 'Step 1/3: Select objects to move',
-        'copy': 'Step 1/3: Select objects to copy',
-        'rotate': 'Step 1/3: Select objects to rotate',
-        'scale': 'Step 1/3: Select objects to scale',
-        'area_to_pdf': '📄 Area to PDF: Click first corner to start selecting export region'
-    };
-    
-    updateHelpBar(statusMessages[m] || `${m.charAt(0).toUpperCase() + m.slice(1)} mode active`);
-    
-    if (m === 'select') {
-        updateHelpBar(statusMessages[m]);
-        // No button to highlight for select mode since it's the default
-    } else if (m === 'move') {
-        // Status message is set by startMoveCommand or move handlers
-    } else if (m === 'copy') {
-        // Status message is set by startCopyCommand or copy handlers
-    } else {
-        setStatusMessage(`${m.charAt(0).toUpperCase() + m.slice(1)} mode active`);
-    }
-
-    // Set the active button only for drawing tools (not select)
-    const buttonTitles = {
-        'line': 'Line',
-        'polyline': 'Polyline',
-        'circle': 'Circle',
-        'ellipse': 'Ellipse',
-        'arc': 'Arc',
-        'rectangle': 'Rectangle',
-        'polygon': 'Polygon',
-        'spline': 'Spline',
-        'hatch': 'Hatch',
-        'point': 'Point',
-        'text': 'Text'
-    };
-
-    if (buttonTitles[m]) {
-        const button = document.querySelector(`.toolbar-button[title="${buttonTitles[m]}"]`);
-        if (button) {
-            button.classList.add('active');
-        }
-    }
-
-    // Change cursor based on mode
-    const canvas = document.getElementById('cadCanvas');
-    if (m === 'select' || m === 'move' || m === 'copy') {
-        canvas.style.cursor = 'default';
-    } else {
-        canvas.style.cursor = 'crosshair';
-    }
-
-    addToHistory(`Mode set: ${m}`);
-}
+// setMode is now defined in /core/state.js
 
 function updateButton(id, state) {
     const el = document.getElementById(id);
@@ -1469,7 +1360,11 @@ function startTextEditing(shape, shapeIndex) {
     // Create edit dialog
     showTextEditDialog(shape);
     
-    addToHistory(`Started editing text: "${shape.content}"`);
+    if (shapeIndex === -1) {
+        addToHistory(`Creating new text...`);
+    } else {
+        addToHistory(`Started editing text: "${shape.content}"`);
+    }
 }
 
 function showTextEditDialog(shape) {
@@ -1493,7 +1388,7 @@ function showTextEditDialog(shape) {
     `;
     
     textEditDialog.innerHTML = `
-        <h3 style="margin-top: 0; color: #4c6fff;">Edit Text - Professional CAD Style</h3>
+        <h3 style="margin-top: 0; color: #4c6fff;">Edit Text</h3>
         <div style="margin-bottom: 15px;">
             <label style="display: block; margin-bottom: 5px;">Text Content:</label>
             <textarea id="textContentEdit" style="
@@ -1599,36 +1494,72 @@ function confirmTextEdit() {
     const newAlign = document.getElementById('textAlignEdit').value;
     const newRotation = parseFloat(document.getElementById('textRotationEdit').value) || 0;
     
-    // Save state for undo
-    saveState('Edit text');
-    
-    // Update the shape
-    const shape = editingTextShape.shape;
-    shape.content = newContent;
-    shape.size = newHeight;
-    shape.height = newHeight; // Compatibility
-    shape.align = newAlign;
-    shape.rotation = newRotation;
-    
-    // Mark shape as selected for visual feedback
-    selectedShapes.clear();
-    selectedShapes.add(editingTextShape.index);
-    
-    addToHistory(`Text edited: "${newContent}" (${newHeight} height, ${newAlign} align, ${newRotation}° rotation)`);
-    
-    // Clean up and redraw
-    closeTextEditDialog();
-    redraw();
-    
-    // Update properties panel if open
-    const propertiesPanel = document.getElementById('propertiesPanel');
-    if (propertiesPanel && propertiesPanel.style.display !== 'none') {
-        updatePropertiesPanel();
+    // Check if this is a new text (index -1) or editing existing
+    if (editingTextShape.index === -1) {
+        // Creating new text
+        if (!newContent.trim()) {
+            addToHistory('Text creation cancelled - empty content');
+            closeTextEditDialog();
+            setMode('select'); // Return to select mode
+            return;
+        }
+        
+        // Update the temporary shape with dialog values
+        const shape = editingTextShape.shape;
+        shape.content = newContent;
+        shape.size = newHeight;
+        shape.height = newHeight;
+        shape.align = newAlign;
+        shape.rotation = newRotation;
+        
+        // Add the new text shape
+        saveState('Create text');
+        addShape(createShapeWithProperties(shape));
+        addToHistory(`Text created: "${newContent}" at (${shape.x.toFixed(2)}, ${shape.y.toFixed(2)})`);
+        
+        // Clean up
+        delete window.pendingTextShape;
+        closeTextEditDialog();
+        redraw();
+        setMode('select'); // Return to select mode
+    } else {
+        // Editing existing text
+        saveState('Edit text');
+        
+        const shape = editingTextShape.shape;
+        shape.content = newContent;
+        shape.size = newHeight;
+        shape.height = newHeight;
+        shape.align = newAlign;
+        shape.rotation = newRotation;
+        
+        // Mark shape as selected for visual feedback
+        selectedShapes.clear();
+        selectedShapes.add(editingTextShape.index);
+        
+        addToHistory(`Text edited: "${newContent}" (${newHeight} height, ${newAlign} align, ${newRotation}° rotation)`);
+        
+        // Clean up and redraw
+        closeTextEditDialog();
+        redraw();
+        
+        // Update properties panel if open
+        const propertiesPanel = document.getElementById('propertiesPanel');
+        if (propertiesPanel && propertiesPanel.style.display !== 'none') {
+            updatePropertiesPanel();
+        }
     }
 }
 
 function cancelTextEdit() {
-    addToHistory('Text editing cancelled');
+    // Check if this was a new text creation
+    if (editingTextShape && editingTextShape.index === -1) {
+        addToHistory('Text creation cancelled');
+        delete window.pendingTextShape;
+        setMode('select'); // Return to select mode
+    } else {
+        addToHistory('Text editing cancelled');
+    }
     closeTextEditDialog();
 }
 
@@ -1697,53 +1628,8 @@ window.toggleCommandHistory = toggleCommandHistory;
 
 
 // === POLYGON DROPDOWN FUNCTIONS ===
-// Toggle polygon dropdown menu
-function togglePolygonDropdown() {
-    const dropdown = document.querySelector('.polygon-dropdown-menu');
-    console.log('togglePolygonDropdown called, dropdown element:', dropdown);
-    if (dropdown) {
-        dropdown.classList.toggle('show');
-        console.log('Dropdown classes:', dropdown.className);
-    } else {
-        console.error('Dropdown menu not found!');
-    }
-}
+// (Polygon now uses simple setMode('polygon') - dropdown removed for stability)
 
-// Close polygon dropdown menu
-function closePolygonDropdown() {
-    const dropdown = document.querySelector('.polygon-dropdown-menu');
-    if (dropdown) {
-        dropdown.classList.remove('show');
-    }
-}
-
-// Polygon mode setup function
-function setPolygonMode(type) {
-    polygonRadiusType = type;
-    setMode('polygon');
-    closePolygonDropdown(); // Close dropdown after selection
-    
-    // Update button icon based on selection
-    const polygonBtn = document.getElementById('polygonBtn');
-    if (polygonBtn) {
-        polygonBtn.textContent = type === 'inscribed' ? '⌼' : '⌾';
-    }
-    
-    addToHistory(`Polygon mode: ${type === 'inscribed' ? 'Inscribed in circle' : 'Circumscribed around circle'}`);
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-    const dropdown = document.querySelector('.polygon-dropdown');
-    if (dropdown && !dropdown.contains(event.target)) {
-        closePolygonDropdown();
-    }
-});
-
-// Make functions globally available
-window.togglePolygonDropdown = togglePolygonDropdown;
-window.setPolygonMode = setPolygonMode;
-// window.selectPolygonType = selectPolygonType;
 window.toggleLayerPanel = toggleLayerPanel;
 window.toggleLineweightDisplay = toggleLineweightDisplay;
 window.initDragLayer = initDragLayer;

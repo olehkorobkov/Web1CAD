@@ -519,8 +519,6 @@ function drawMovePreview(ctx, shape, dx, dy, zoom) {
 
 // === FILE OPERATIONS ===
 
-// === FILE OPERATIONS ===
-
 // === ADVANCED EDITING MODE HANDLERS ===
 // [ФУНКЦІЇ ROTATE ТА SCALE ВИМКНЕНО]
 
@@ -586,9 +584,7 @@ function handleSelectMode(x, y, e) {
                 return;
             } else {
                 // Select new object (clear other selections)
-                if (typeof clearSelection === 'function') {
-                    clearSelection();
-                }
+                clearSelection();
                 selectedShapes.add(clickedIndex);
                 addToHistory(`Object selected: ${clickedShape.type}`);
             }
@@ -605,9 +601,7 @@ function handleSelectMode(x, y, e) {
     
     // No object clicked - start selection window
     if (!e.shiftKey) {
-        if (typeof clearSelection === 'function') {
-            clearSelection();
-        }
+        clearSelection();
     }
 
     startX = x;
@@ -1389,13 +1383,9 @@ document.addEventListener('keydown', (e) => {
             }
         }
         else if (mode === 'select' && selectedShapes.size > 0) {
-            if (typeof clearSelection === 'function') {
-                clearSelection();
-            }
+            clearSelection();
         } else {
-            if (typeof setMode === 'function') {
-                setMode('select');
-            }
+            setMode('select');
         }
     }
 
@@ -1434,35 +1424,7 @@ document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'a') {
         if (!isUserTypingInInput()) {
             e.preventDefault();
-            if (typeof selectAll === 'function') {
-                selectAll();
-            }
-        }
-    }
-    
-    // Copy selected with Ctrl+C
-    if (e.ctrlKey && e.key === 'c') {
-        if (!isUserTypingInInput()) {
-            e.preventDefault();
-            if (typeof copySelected === 'function') {
-                copySelected();
-            }
-        }
-    }
-    
-    // Paste with Ctrl+V
-    if (e.ctrlKey && e.key === 'v') {
-        if (!isUserTypingInInput()) {
-            e.preventDefault();
-            if (typeof window.copiedShapes !== 'undefined' && window.copiedShapes.length > 0) {
-                // Switch to paste mode so user can click where to paste
-                if (typeof setMode === 'function') {
-                    setMode('paste');
-                }
-                addToHistory('Paste mode activated - Click to place copied objects');
-            } else {
-                addToHistory('Nothing to paste - copy objects first', 'error');
-            }
+            selectAll();
         }
     }
     
@@ -1978,16 +1940,134 @@ lengthInput.addEventListener('blur', (e) => {
     }, 100);
 });
 
-// Wrapper function for HTML button - calls deleteSelected from /core/shapes.js
 function deleteSelectedShapes() {
-    if (typeof deleteSelected === 'function') {
-        deleteSelected();
-    } else {
-        console.error('deleteSelected function not available');
+    if (selectedShapes.size === 0) {
+        addToHistory('No objects selected to delete', 'error');
+        return;
     }
+
+    // Save state before deleting
+    saveState(`Delete ${selectedShapes.size} object(s)`);
+
+    // Convert selectedShapes to array and sort in descending order
+    // This ensures we delete from the end to avoid index shifting issues
+    const indicesToDelete = Array.from(selectedShapes).sort((a, b) => b - a);
+    
+    // Delete shapes from the end
+    indicesToDelete.forEach(index => {
+        shapes.splice(index, 1);
+    });
+    
+    addToHistory(`Deleted ${selectedShapes.size} object(s)`);
+    
+    // Clear selection
+    selectedShapes.clear();
+    
+    // Redraw canvas
+    redraw();
 }
 
-// inheritProperties and explodeShape are now in /geometry/operations.js
+// === EXPLODE FUNCTIONS ===
+function inheritProperties(newShape, source) {
+    newShape.layer = source.layer || currentLayer;
+    newShape.color = source.color || currentColor;
+    newShape.lineWeight = source.lineWeight || source.lineweight || currentLineWeight;
+    newShape.linetype = source.linetype || currentLinetype;
+    return newShape;
+}
+
+function explodeShape(shape) {
+    const parts = [];
+    switch (shape.type) {
+        case 'line':
+        case 'point':
+        case 'text':
+            // Not explodable into simpler primitives here
+            return parts;
+        case 'polyline': {
+            const pts = shape.points || [];
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p1 = pts[i], p2 = pts[i + 1];
+                if (p1 && p2 && (p1.x !== p2.x || p1.y !== p2.y)) {
+                    parts.push({ type: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                }
+            }
+            break;
+        }
+        case 'circle': {
+            const cx = shape.cx, cy = shape.cy, r = Math.max(0, shape.radius || shape.r || 0);
+            const segs = Math.max(8, EXPLODE_SEGMENTS);
+            for (let i = 0; i < segs; i++) {
+                const a0 = (i / segs) * 2 * Math.PI;
+                const a1 = ((i + 1) / segs) * 2 * Math.PI;
+                const x1 = cx + r * Math.cos(a0), y1 = cy + r * Math.sin(a0);
+                const x2 = cx + r * Math.cos(a1), y2 = cy + r * Math.sin(a1);
+                parts.push({ type: 'line', x1, y1, x2, y2 });
+            }
+            break;
+        }
+        case 'ellipse': {
+            const cx = shape.cx, cy = shape.cy, rx = Math.max(0, shape.rx || 0), ry = Math.max(0, shape.ry || 0);
+            const rot = shape.rotation || 0;
+            const cosR = Math.cos(rot), sinR = Math.sin(rot);
+            const segs = Math.max(8, EXPLODE_SEGMENTS);
+            const pts = [];
+            for (let i = 0; i <= segs; i++) {
+                const t = (i / segs) * 2 * Math.PI;
+                const lx = rx * Math.cos(t);
+                const ly = ry * Math.sin(t);
+                const x = cx + lx * cosR - ly * sinR;
+                const y = cy + lx * sinR + ly * cosR;
+                pts.push({ x, y });
+            }
+            for (let i = 0; i < pts.length - 1; i++) {
+                parts.push({ type: 'line', x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y });
+            }
+            break;
+        }
+        case 'arc': {
+            const cx = shape.cx, cy = shape.cy, r = Math.max(0, shape.radius || 0);
+            let a0 = shape.startAngle || 0;
+            let a1 = shape.endAngle || 0;
+            // Normalize to CCW sweep
+            let sweep = a1 - a0;
+            const full = 2 * Math.PI;
+            if (sweep === 0) return parts;
+            // Choose segments proportional to sweep
+            const segs = Math.max(4, Math.round(EXPLODE_SEGMENTS * Math.abs(sweep) / full));
+            const step = sweep / segs;
+            let prevX = cx + r * Math.cos(a0), prevY = cy + r * Math.sin(a0);
+            for (let i = 1; i <= segs; i++) {
+                const ang = a0 + step * i;
+                const x = cx + r * Math.cos(ang);
+                const y = cy + r * Math.sin(ang);
+                parts.push({ type: 'line', x1: prevX, y1: prevY, x2: x, y2: y });
+                prevX = x; prevY = y;
+            }
+            break;
+        }
+        case 'hatch': {
+            const pts = shape.points || [];
+            for (let i = 0; i + 1 < pts.length; i += 2) {
+                const p1 = pts[i], p2 = pts[i + 1];
+                parts.push({ type: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+            }
+            break;
+        }
+        case 'spline': {
+            const pts = shape.points || [];
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p1 = pts[i], p2 = pts[i + 1];
+                parts.push({ type: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+            }
+            break;
+        }
+        default:
+            return parts;
+    }
+    // Inherit properties
+    return parts.map(p => inheritProperties(p, shape));
+}
 
 function explodeSelectedShapes() {
     if (selectedShapes.size === 0) {
@@ -2026,7 +2106,6 @@ function promptNewLayer() {
 window.promptNewLayer = promptNewLayer;
 
 // addShape is now in /core/shapes.js
-
 
 function createPolygon(centerX, centerY, radius) {
     const points = [];
