@@ -1,5 +1,4 @@
 let shapes = [];
-let hoveredShape = null;
 let selectedShapes = new Set();
 
 function createShapeWithProperties(shapeData) {

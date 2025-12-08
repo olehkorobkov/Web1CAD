@@ -1,6 +1,6 @@
 /*
  * Geometry Utils Module - Web1CAD System
- * Version 250512 (December 5, 2025)
+ * Version 251207 (December 7, 2025)
  * Developed by Oleh Korobkov
  * © 2025 Oleh Korobkov. All rights reserved.
  * If you see this code elsewhere, it was copied.
@@ -1168,50 +1168,4 @@ function doesShapeIntersectWindow(shape, x1, y1, x2, y2) {
         default:
             return false;
     }
-}
-
-/**
- * Test if line intersects with rectangle
- */
-function lineIntersectsRect(x1, y1, x2, y2, rectX1, rectY1, rectX2, rectY2) {
-    // Check if either endpoint is inside rectangle
-    if ((x1 >= rectX1 && x1 <= rectX2 && y1 >= rectY1 && y1 <= rectY2) ||
-        (x2 >= rectX1 && x2 <= rectX2 && y2 >= rectY1 && y2 <= rectY2)) {
-        return true;
-    }
-    
-    // Check line intersection with rectangle edges
-    return lineIntersectsLine(x1, y1, x2, y2, rectX1, rectY1, rectX2, rectY1) ||  // top
-           lineIntersectsLine(x1, y1, x2, y2, rectX2, rectY1, rectX2, rectY2) ||  // right
-           lineIntersectsLine(x1, y1, x2, y2, rectX2, rectY2, rectX1, rectY2) ||  // bottom
-           lineIntersectsLine(x1, y1, x2, y2, rectX1, rectY2, rectX1, rectY1);    // left
-}
-
-/**
- * Test if two line segments intersect
- */
-function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
-    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-    if (Math.abs(denom) < 1e-10) return false; // Parallel lines
-    
-    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
-    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
-    
-    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
-}
-
-/**
- * Test if circle intersects with rectangle
- */
-function circleIntersectsRect(cx, cy, radius, rectX1, rectY1, rectX2, rectY2) {
-    // Find the closest point on the rectangle to the circle center
-    const closestX = Math.max(rectX1, Math.min(cx, rectX2));
-    const closestY = Math.max(rectY1, Math.min(cy, rectY2));
-    
-    // Calculate distance from circle center to closest point
-    const dx = cx - closestX;
-    const dy = cy - closestY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    return distance <= radius;
 }

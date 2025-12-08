@@ -3,16 +3,18 @@ let startX = 0, startY = 0;
 let previewX = 0, previewY = 0;
 let currentMouseX = 0, currentMouseY = 0; 
 
-let copiedShapes = []; 
-let scaleCenter = { x: 0, y: 0 };
+// Initialize copiedShapes as global variable for copy/paste operations
+if (typeof window.copiedShapes === 'undefined') {
+    window.copiedShapes = [];
+}
+let copiedShapes = window.copiedShapes;
+
 let mirrorLine = null;
 
 let moveStep = 0;
 let moveBasePoint = { x: 0, y: 0 };
 let moveObjectsToMove = new Set();
 let movePreviewActive = false;
-let isMoving = false;
-let moveStartX = 0, moveStartY = 0;
 
 let copyStep = 0;
 let copyBasePoint = { x: 0, y: 0 };
@@ -26,7 +28,6 @@ let splineDirection = { x: 0, y: 0 };
 
 let polylinePoints = [];
 let polylinePreviewActive = false;
-let circleRadius = 0;
 
 let ellipseDrawingStep = 0;
 let ellipseCenter = { x: 0, y: 0 };
@@ -46,12 +47,14 @@ let rectangleAngle = 0;
 let rectangleWidthSign = 1;
 let rectangleHeightSign = 1;
 
+// Polygon variables
 let polygonSides = 5;
 let polygonRadius = 0;
 let polygonAngle = 0;
 let polygonStep = 0;
 let polygonCenterX = 0;
 let polygonCenterY = 0;
+let polygonRadiusType = 'circumscribed'; // 'inscribed' or 'circumscribed'
 
 let splinePoints = [];
 let splinePreviewActive = false;
@@ -387,22 +390,136 @@ function drawGrid() {
     ctx.restore();
 }
 
-let pendingDraw = false;
+// redraw is now defined in /rendering/renderer.js
 
-function redraw() {
-    if (!pendingDraw) {
-        pendingDraw = true;
-        requestAnimationFrame(() => {
-            try {
-                _redraw();
-            } catch (error) {
-                console.error('Error during redraw:', error);
-                if (typeof window.renderDiagnostics !== 'undefined') {
-                    window.renderDiagnostics.reportError('redraw_error', error);
-                }
-            } finally {
-                pendingDraw = false;
-            }
-        });
+// ============================================================================
+// EXPLODE OPERATIONS - Convert complex shapes to lines
+// ============================================================================
+
+/**
+ * Inherit properties from source shape to new shape
+ */
+function inheritProperties(newShape, source) {
+    if (typeof currentLayer !== 'undefined') {
+        newShape.layer = source.layer || currentLayer;
     }
+    if (typeof currentColor !== 'undefined') {
+        newShape.color = source.color || currentColor;
+    }
+    if (typeof currentLineWeight !== 'undefined') {
+        newShape.lineWeight = source.lineWeight || source.lineweight || currentLineWeight;
+    }
+    if (typeof currentLinetype !== 'undefined') {
+        newShape.linetype = source.linetype || currentLinetype;
+    }
+    return newShape;
 }
+
+/**
+ * Explode a shape into simpler primitives (usually lines)
+ * @param {Object} shape - Shape to explode
+ * @returns {Array} Array of simpler shapes (lines)
+ */
+function explodeShape(shape) {
+    const parts = [];
+    
+    switch (shape.type) {
+        case 'line':
+        case 'point':
+        case 'text':
+            return parts;
+            
+        case 'polyline': {
+            const pts = shape.points || [];
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p1 = pts[i], p2 = pts[i + 1];
+                if (p1 && p2 && (p1.x !== p2.x || p1.y !== p2.y)) {
+                    parts.push({ type: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+                }
+            }
+            break;
+        }
+        
+        case 'circle': {
+            const cx = shape.cx, cy = shape.cy, r = Math.max(0, shape.radius || shape.r || 0);
+            const segs = typeof EXPLODE_SEGMENTS !== 'undefined' ? Math.max(8, EXPLODE_SEGMENTS) : 64;
+            for (let i = 0; i < segs; i++) {
+                const a0 = (i / segs) * 2 * Math.PI;
+                const a1 = ((i + 1) / segs) * 2 * Math.PI;
+                const x1 = cx + r * Math.cos(a0), y1 = cy + r * Math.sin(a0);
+                const x2 = cx + r * Math.cos(a1), y2 = cy + r * Math.sin(a1);
+                parts.push({ type: 'line', x1, y1, x2, y2 });
+            }
+            break;
+        }
+        
+        case 'ellipse': {
+            const cx = shape.cx, cy = shape.cy, rx = Math.max(0, shape.rx || 0), ry = Math.max(0, shape.ry || 0);
+            const rot = shape.rotation || 0;
+            const cosR = Math.cos(rot), sinR = Math.sin(rot);
+            const segs = typeof EXPLODE_SEGMENTS !== 'undefined' ? Math.max(8, EXPLODE_SEGMENTS) : 64;
+            const pts = [];
+            for (let i = 0; i <= segs; i++) {
+                const t = (i / segs) * 2 * Math.PI;
+                const lx = rx * Math.cos(t);
+                const ly = ry * Math.sin(t);
+                const x = cx + lx * cosR - ly * sinR;
+                const y = cy + lx * sinR + ly * cosR;
+                pts.push({ x, y });
+            }
+            for (let i = 0; i < pts.length - 1; i++) {
+                parts.push({ type: 'line', x1: pts[i].x, y1: pts[i].y, x2: pts[i + 1].x, y2: pts[i + 1].y });
+            }
+            break;
+        }
+        
+        case 'arc': {
+            const cx = shape.cx, cy = shape.cy, r = Math.max(0, shape.radius || 0);
+            let a0 = shape.startAngle || 0;
+            let a1 = shape.endAngle || 0;
+            let sweep = a1 - a0;
+            const full = 2 * Math.PI;
+            if (sweep === 0) return parts;
+            
+            const explodeSegs = typeof EXPLODE_SEGMENTS !== 'undefined' ? EXPLODE_SEGMENTS : 64;
+            const segs = Math.max(4, Math.round(explodeSegs * Math.abs(sweep) / full));
+            const step = sweep / segs;
+            let prevX = cx + r * Math.cos(a0), prevY = cy + r * Math.sin(a0);
+            
+            for (let i = 1; i <= segs; i++) {
+                const ang = a0 + step * i;
+                const x = cx + r * Math.cos(ang);
+                const y = cy + r * Math.sin(ang);
+                parts.push({ type: 'line', x1: prevX, y1: prevY, x2: x, y2: y });
+                prevX = x; prevY = y;
+            }
+            break;
+        }
+        
+        case 'hatch': {
+            const pts = shape.points || [];
+            for (let i = 0; i + 1 < pts.length; i += 2) {
+                const p1 = pts[i], p2 = pts[i + 1];
+                parts.push({ type: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+            }
+            break;
+        }
+        
+        case 'spline': {
+            const pts = shape.points || [];
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p1 = pts[i], p2 = pts[i + 1];
+                parts.push({ type: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+            }
+            break;
+        }
+        
+        default:
+            return parts;
+    }
+    
+    return parts.map(p => inheritProperties(p, shape));
+}
+
+window.inheritProperties = inheritProperties;
+window.explodeShape = explodeShape;
