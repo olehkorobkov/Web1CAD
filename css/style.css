@@ -1,6 +1,6 @@
 /*
  * Web1CAD System Styles
- * Version 0.240824 (August 24, 2025)
+ * Version 251207 (December 7, 2025)
  * Developed by Oleh Korobkov
  * © 2025 Oleh Korobkov. All rights reserved.
  * If you see this code elsewhere, it was copied.
@@ -2430,3 +2430,56 @@ input[type="color"]:hover {
     transform: none;
     box-shadow: none;
 }
+
+/* Hatch Settings Panel */
+.hatch-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hatch-setting-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hatch-setting-row label {
+    min-width: 90px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.hatch-setting-row input[type="number"] {
+    flex: 1;
+    background: #222;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: 60px;
+}
+
+.hatch-setting-row input[type="number"]:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+.hatch-setting-row select {
+    flex: 1;
+    padding: 4px 8px;
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 3px;
+    font-size: 12px;
+    min-width: 100px;
+    cursor: pointer;
+}
+
+.hatch-setting-row select:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
