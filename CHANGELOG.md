@@ -1,5 +1,33 @@
 # Web1CAD Changelog
 
+## Version 251207 Beta (December 7, 2025) - ARCHITECTURE REFACTORING & CODE REORGANIZATION
+
+### 🏗️ Architecture Improvements
+- **Code Modularization**: Reorganized codebase into logical modules
+  - Created `/core/` modules: state.js, selection.js, shapes.js, context.js
+  - Improved separation of concerns and maintainability
+  - Reduced code duplication (~380 lines removed)
+
+### 🐛 Critical Bug Fixes
+- **Keyboard Shortcuts**: Fixed Ctrl+C and Ctrl+V not working after refactoring
+  - Added missing keyboard event handlers in command-system.js
+  - Converted copiedShapes to global window variable
+  - Added typeof safety checks for all critical function calls
+
+### 🔒 Code Safety Improvements
+- **Defensive Programming**: Added 8+ typeof checks before function calls
+  - Protected selectAll(), copySelected(), clearSelection(), setMode(), pasteShapes()
+  - Prevents runtime errors from undefined functions
+  - Improved cross-module compatibility
+
+### 📊 Statistics
+- Code reduction: ~380 lines removed through consolidation
+- Safety improvements: 8+ typeof checks added
+- Modules created: 4 new core modules
+- Files refactored: 7+ major files
+
+---
+
 ## Version 250512 Beta (December 5, 2025) - PDF EXPORT FIX & UI ICONS UPDATE
 
 ### 🐛 Critical Bug Fixes

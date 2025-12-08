@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
     Web1CAD - Professional 2D CAD System
-    Version 250512 Beta (December 5, 2025) - PDF EXPORT FIX & UI ICONS UPDATE
+    Version 251207 Beta (December 7, 2025) - ARCHITECTURE REFACTORING & CODE REORGANIZATION
     Developed by Oleh Korobkov
     © 2025 Oleh Korobkov. All rights reserved.
     Unauthorized use or distribution is prohibited.
@@ -27,13 +27,7 @@
         <div class="toolbar-button" title="Ellipse" onclick="setMode('ellipse')">⬭</div>
         <div class="toolbar-button" title="Arc" onclick="setMode('arc')">⌒</div>
         <div class="toolbar-button" title="Rectangle" onclick="setMode('rectangle')">▭</div>
-        <div class="polygon-dropdown">
-            <div class="toolbar-button" title="Polygon" onclick="togglePolygonDropdown()" id="polygonBtn">⬠</div>
-            <div class="polygon-dropdown-menu" id="polygonDropdown">
-                <div class="dropdown-item" onclick="setPolygonMode('inscribed')" title="Inscribed Polygon">⌼</div>
-                <div class="dropdown-item" onclick="setPolygonMode('circumscribed')" title="Circumscribed Polygon">⌾</div>
-            </div>
-        </div>
+        <div class="toolbar-button" title="Polygon" onclick="setMode('polygon')" id="polygonBtn">⬠</div>
         <div class="toolbar-button" title="Spline" onclick="setMode('spline')">∿</div>
         <div class="toolbar-button" title="Hatch" onclick="setMode('hatch')">▧</div>
         <div class="toolbar-button" title="Point" onclick="setMode('point')">•</div>
@@ -343,6 +337,37 @@
             </div>
         </div>
         
+        <!-- Hatch Settings Panel -->
+        <div id="hatchPanel" class="minimal-layer-panel" style="display: none;">
+            <div class="layer-panel-header" id="hatchPanelHeader">
+                <span>Hatch Settings</span>
+                <button onclick="event.stopPropagation(); toggleHatchPanel()">×</button>
+            </div>
+            <div class="layer-panel-content">
+                <div class="hatch-settings">
+                    <div class="hatch-setting-row">
+                        <label for="hatchPattern">Pattern:</label>
+                        <select id="hatchPattern">
+                            <option value="solid">Solid Fill</option>
+                            <option value="lines" selected>Parallel Lines</option>
+                            <option value="cross">Cross Hatch</option>
+                            <option value="grid">Grid (H+V)</option>
+                            <option value="dots">Dots</option>
+                            <option value="brick">Brick</option>
+                        </select>
+                    </div>
+                    <div class="hatch-setting-row">
+                        <label for="hatchAngle">Angle (°):</label>
+                        <input type="number" id="hatchAngle" value="45" min="0" max="360" step="1">
+                    </div>
+                    <div class="hatch-setting-row">
+                        <label for="hatchSpacing">Spacing (px):</label>
+                        <input type="number" id="hatchSpacing" value="10" min="1" max="50" step="0.5">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Help Bar -->
         <div id="helpBar" class="help-bar">Ready</div>
     </div>
@@ -375,34 +400,55 @@
 
 <!-- JavaScript modules -->
 <!-- <script src="js/secure-core.js"></script> -->
-<script src="js/debug-system.js"></script>
-<script src="js/shape-renderer.js"></script>
-<script src="js/command-system.js"></script>
 
-<script src="js/cad/core/auto_save.js"></script>
+<!-- UTILITY SYSTEMS - Load first -->
+<script src="js/debug-system.js"></script>
+<script src="js/render-stabilizer.js"></script>
+<script src="js/shape-renderer.js"></script>
+
+<!-- RENDERING CONTEXT - Canvas and context initialization -->
+<script src="js/cad/rendering/context.js"></script>
+
+<!-- RENDERING VIEWPORT - Zoom and offset variables -->
+<script src="js/cad/rendering/viewport.js"></script>
+
+<!-- GEOMETRY PRIMITIVES - shapes and selectedShapes arrays -->
+<script src="js/cad/geometry/primitives.js"></script>
+
+<!-- CORE MODULES - Constants and state management -->
 <script src="js/cad/core/constants.js"></script>
+<script src="js/cad/core/state.js"></script>
+<script src="js/cad/core/selection.js"></script>
 <script src="js/cad/core/events.js"></script>
 <script src="js/cad/core/layers.js"></script>
 <script src="js/cad/core/pdf-export.js"></script>
 <script src="js/cad/core/undo.js"></script>
 <script src="js/cad/core/utils.js"></script>
+<script src="js/cad/core/auto_save.js"></script>
 
+<!-- GEOMETRY OPERATIONS - Geometric calculations and operations -->
+<script src="js/cad/geometry/operations.js"></script>
+<script src="js/cad/geometry/utils.js"></script>
+<script src="js/cad/geometry/hatch.js"></script>
+
+<!-- CORE SHAPES - Shape lifecycle (depends on shapes array) -->
+<script src="js/cad/core/shapes.js"></script>
+
+<!-- RENDERING ENGINE - Performance monitoring and rendering -->
+<script src="js/cad/rendering/performance.js"></script>
+<script src="js/cad/rendering/renderer.js"></script>
+<script src="js/cad/rendering/timing.js"></script>
+
+<!-- UI MODULES - User interface components -->
 <script src="js/cad/ui/properties-panel.js"></script>
 <script src="js/cad/ui/command-system.js"></script>
 
+<!-- COMMAND MODULES - Specific command implementations -->
 <script src="js/cad/commands/copy.js"></script>
 <script src="js/cad/commands/move.js"></script>
 <script src="js/cad/commands/rotate.js"></script>
 <script src="js/cad/commands/scale.js"></script>
-
-<script src="js/cad/geometry/primitives.js"></script>
-<script src="js/cad/geometry/operations.js"></script>
-<script src="js/cad/geometry/utils.js"></script>
-
-<script src="js/cad/rendering/performance.js"></script>
-<script src="js/cad/rendering/renderer.js"></script>
-<script src="js/cad/rendering/timing.js"></script>
-<script src="js/cad/rendering/viewport.js"></script>
+<script src="js/cad/commands/hatch.js"></script>
 
 <!-- jsPDF library for vector PDF export (local copy) -->
 <script src="js/jspdf.min.js"></script>

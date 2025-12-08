@@ -1,10 +1,21 @@
 # Web1CAD Version Information
 
-**Current Version**: 250512 Beta  
-**Release Date**: December 5, 2025  
+**Current Version**: 251207 Beta  
+**Release Date**: December 7, 2025  
 **Version Format**: YY.MMDD (Year.MonthDay)
 
 ## Version History
+- **251207** (December 7, 2025) - Architecture Refactoring & Code Reorganization
+  - Major code architecture reorganization for better maintainability
+  - Created new core modules: state.js, selection.js, shapes.js
+  - Moved canvas/ctx to rendering/context.js
+  - Moved redraw() to rendering/renderer.js
+  - Fixed Ctrl+A, Ctrl+C, Ctrl+V functionality
+  - Added typeof safety checks for all critical function calls
+  - Improved module boundaries and separation of concerns
+  - Fixed copiedShapes global accessibility
+  - Removed ~380+ lines of duplicated code from UI modules
+  - Zero compilation errors after refactoring
 - **250512** (December 5, 2025) - PDF Export Fix & UI Icons Update
 - **250512** (December 5, 2025) - UI Enhancement & Polygon Dropdown Update
 - **0.250818** (August 18, 2025) - Project Cleanup & Optimization Update
