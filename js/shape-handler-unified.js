@@ -1,5 +1,5 @@
 /*
- * Unified Shape Handler - Enhanced Web1CAD System v250512
+ * Unified Shape Handler - Enhanced Web1CAD System v251207
  * Developed by Oleh Korobkov
  * © 2025 Oleh Korobkov. All rights reserved.
  * 

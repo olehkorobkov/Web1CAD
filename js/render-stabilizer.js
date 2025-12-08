@@ -1,6 +1,6 @@
 /**
  * Web1CAD Render Stabilization System
- * Version 250512 Beta (December 5, 2025)
+ * Version 251207 Beta (December 7, 2025)
  * 
  * This module addresses critical rendering issues that occur at high zoom levels:
  * - Line width instability when using lineWidth = 1/zoom calculations
