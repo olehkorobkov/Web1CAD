@@ -553,9 +553,28 @@ function handleSelectMode(x, y, e) {
     // Check if we're clicking on an object first (before clearing selection)
     let clickedShape = null;
     
-    // PHASE 2C: Use spatial index for faster shape picking
+    // PHASE 3: Try QuadTree first, fall back to spatial index
     let shapesToCheck = shapes;
-    if (typeof findShapesNearPoint === 'function') {
+    let usedQuadTree = false;
+    
+    if (typeof findShapesNearPointQuadTree === 'function' && typeof globalQuadTree !== 'undefined') {
+        try {
+            // Initialize QuadTree if needed
+            if (globalQuadTree.isDirty || globalQuadTree.root.getStats().objectCount !== shapes.length) {
+                initializeQuadTree();
+            }
+            
+            // Use QuadTree for fast picking
+            const pickedIndices = findShapesNearPointQuadTree(x, y, 5);
+            shapesToCheck = pickedIndices.map(i => shapes[i]).filter(s => s);
+            usedQuadTree = true;
+        } catch (err) {
+            console.warn('QuadTree picking failed, falling back to spatial index:', err);
+        }
+    }
+    
+    // PHASE 2C: Fallback to spatial index if QuadTree not available
+    if (!usedQuadTree && typeof findShapesNearPoint === 'function') {
         // Use spatial index for fast picking within tolerance
         const pickedIndices = findShapesNearPoint(x, y, 5);
         shapesToCheck = pickedIndices.map(i => shapes[i]).filter(s => s);
