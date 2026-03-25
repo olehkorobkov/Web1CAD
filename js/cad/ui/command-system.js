@@ -1990,26 +1990,48 @@ function explodeSelectedShapes() {
         addToHistory('No objects selected to explode', 'error');
         return;
     }
-    saveState(`Explode ${selectedShapes.size} object(s)`);
-    const indices = Array.from(selectedShapes).sort((a, b) => b - a);
+    
+    const explodeCount = selectedShapes.size;
+    saveState(`Explode ${explodeCount} object(s)`);
+    
+    // PHASE 1B: Collect UUIDs of shapes to explode (since we'll be modifying the array)
+    const uuidsToExplode = Array.from(selectedShapes);
+    
     let totalParts = 0;
     const newSelected = new Set();
-    for (const idx of indices) {
-        if (idx < 0 || idx >= shapes.length) continue;
-        const shape = shapes[idx];
+    
+    // Process each shape to explode
+    for (const uuid of uuidsToExplode) {
+        // Find shape by UUID
+        const shapeIndex = getShapeIndexById(uuid);
+        if (shapeIndex < 0) continue;
+        
+        const shape = shapes[shapeIndex];
         const parts = explodeShape(shape);
+        
         if (parts && parts.length) {
-            shapes.splice(idx, 1);
+            // Remove original shape at index
+            shapes.splice(shapeIndex, 1);
+            
+            // Add exploded parts and track them
             for (const part of parts) {
+                // PHASE 1B: Ensure new parts have UUIDs
+                if (!part.uuid) {
+                    part.uuid = generateShapeUUID();
+                }
                 shapes.push(part);
-                newSelected.add(shapes.length - 1);
+                newSelected.add(part.uuid);  // Select by UUID, not index
             }
             totalParts += parts.length;
         }
     }
+    
     selectedShapes = newSelected;
-    addToHistory(`Exploded ${indices.length} object(s) into ${totalParts} part(s)`);
-    redraw();
+    addToHistory(`Exploded ${explodeCount} object(s) into ${totalParts} part(s)`);
+    
+    if (typeof redraw === 'function') {
+        redraw();
+    }
 }
 
 // Prompt for new layer name

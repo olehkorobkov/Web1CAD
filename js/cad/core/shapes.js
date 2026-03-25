@@ -67,6 +67,7 @@ function addShape(shape) {
 
 /**
  * Delete all selected shapes
+ * PHASE 1B: Refactored to use UUID-based deletion instead of index-based
  */
 function deleteSelected() {
     if (typeof selectedShapes === 'undefined' || selectedShapes.size === 0) {
@@ -76,19 +77,17 @@ function deleteSelected() {
         return;
     }
     
-    // Save state for undo
+    // Save state for undo - count before deletion
+    const deleteCount = selectedShapes.size;
     if (typeof saveState === 'function') {
-        saveState(`Delete ${selectedShapes.size} object(s)`);
+        saveState(`Delete ${deleteCount} object(s)`);
     }
     
-    // Sort indices in descending order to avoid index shifting
-    const sortedIndices = Array.from(selectedShapes).sort((a, b) => b - a);
-    
-    // Remove shapes from back to front
+    // PHASE 1B: UUID-based deletion - filter out selected shapes
+    // This is much simpler and avoids index shifting issues
     if (typeof shapes !== 'undefined') {
-        sortedIndices.forEach(index => {
-            shapes.splice(index, 1);
-        });
+        // Keep all shapes that are NOT in selectedShapes (by UUID)
+        shapes = shapes.filter(shape => !selectedShapes.has(shape.uuid));
     }
     
     // Invalidate viewport cache since shapes array changed
@@ -97,9 +96,10 @@ function deleteSelected() {
     }
     
     if (typeof addToHistory === 'function') {
-        addToHistory(`Deleted ${selectedShapes.size} object(s)`);
+        addToHistory(`Deleted ${deleteCount} object(s)`);
     }
     
+    // Clear selection after deletion
     selectedShapes.clear();
     
     if (typeof redraw === 'function') {
