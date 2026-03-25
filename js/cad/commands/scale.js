@@ -99,6 +99,17 @@ function handleScaleFactorSelection(x, y, e) {
         }
     }
     
+    // Invalidate caches after shapes are modified (PHASE 2/3)
+    if (typeof invalidateShapeSetBoundsCache === 'function') {
+        invalidateShapeSetBoundsCache(scaleObjectsToScale);
+    }
+    if (typeof invalidateQuadTree === 'function') {
+        invalidateQuadTree();
+    }
+    if (typeof invalidateViewportCache === 'function') {
+        invalidateViewportCache();
+    }
+    
     selectedShapes = new Set(scaleObjectsToScale);
     
     updateHelpBar('Objects scaled! Returning to selection mode...');

@@ -116,6 +116,17 @@ function handleRotateAngleSelection(x, y, e) {
         }
     }
     
+    // Invalidate caches after shapes are modified (PHASE 2/3)
+    if (typeof invalidateShapeSetBoundsCache === 'function') {
+        invalidateShapeSetBoundsCache(rotateObjectsToRotate);
+    }
+    if (typeof invalidateQuadTree === 'function') {
+        invalidateQuadTree();
+    }
+    if (typeof invalidateViewportCache === 'function') {
+        invalidateViewportCache();
+    }
+    
     selectedShapes = new Set(rotateObjectsToRotate);
     
     updateHelpBar('Objects rotated! Returning to selection mode...');

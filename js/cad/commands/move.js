@@ -90,12 +90,26 @@ function handleMoveDestinationSelection(x, y, e) {
     const dx = x - moveBasePoint.x;
     const dy = y - moveBasePoint.y;
     
+    // Save undo state before modifying shapes
+    saveState(`Move ${moveObjectsToMove.size} object(s)`);
+    
     // PHASE 1D: Iterate by UUID
     for (const uuid of moveObjectsToMove) {
         const shape = getShapeById(uuid);
         if (shape) {
             moveShape(shape, dx, dy);
         }
+    }
+    
+    // Invalidate caches after shapes are modified (PHASE 2/3)
+    if (typeof invalidateShapeSetBoundsCache === 'function') {
+        invalidateShapeSetBoundsCache(moveObjectsToMove);
+    }
+    if (typeof invalidateQuadTree === 'function') {
+        invalidateQuadTree();
+    }
+    if (typeof invalidateViewportCache === 'function') {
+        invalidateViewportCache();
     }
     
     selectedShapes = new Set(moveObjectsToMove);

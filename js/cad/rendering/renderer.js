@@ -49,14 +49,15 @@ function _redraw() {
         if (i >= shapes.length) continue; // Safety check
         const shape = shapes[i];
         
+        // PHASE 1D FIX: Use shape.uuid for Set checks (Sets contain UUIDs, not array indices)
         // Hide original objects that are being moved during preview
-        if (mode === 'move' && movePreviewActive && moveStep === 2 && moveObjectsToMove.has(i)) {
+        if (mode === 'move' && movePreviewActive && moveStep === 2 && moveObjectsToMove.has(shape.uuid)) {
             // Skip drawing original objects during move preview to avoid visual confusion
             continue;
         }
         
         // Hide original objects that are being rotated during preview
-        if (mode === 'rotate' && rotatePreviewActive && rotateStep === 2 && rotateObjectsToRotate.has(i)) {
+        if (mode === 'rotate' && rotatePreviewActive && rotateStep === 2 && rotateObjectsToRotate.has(shape.uuid)) {
             // Skip drawing original objects during rotate preview to avoid visual confusion
             continue;
         }

@@ -121,6 +121,17 @@ function handleCopyDestinationSelection(x, y, e) {
     // PHASE 1D: Select copied shapes by UUID
     selectedShapes = new Set(newShapeUuids);
     
+    // Invalidate caches after new shapes are added (PHASE 2/3)
+    if (typeof invalidateShapeSetBoundsCache === 'function') {
+        invalidateShapeSetBoundsCache(new Set(newShapeUuids));
+    }
+    if (typeof invalidateQuadTree === 'function') {
+        invalidateQuadTree();
+    }
+    if (typeof invalidateViewportCache === 'function') {
+        invalidateViewportCache();
+    }
+    
     updateHelpBar('Objects copied! Returning to selection mode...');
     setTimeout(() => {
         updateHelpBar('Use drawing tools to create shapes');
