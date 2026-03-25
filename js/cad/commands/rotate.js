@@ -37,8 +37,10 @@ function handleRotateObjectSelection(x, y, e) {
     if (e.shiftKey) {
     } else {
         let clickedOnSelected = false;
-        for (const i of rotateObjectsToRotate) {
-            if (isPointInShape(shapes[i], x, y)) {
+        // PHASE 1D: Check by UUID
+        for (const uuid of rotateObjectsToRotate) {
+            const shape = getShapeById(uuid);
+            if (shape && isPointInShape(shape, x, y)) {
                 clickedOnSelected = true;
                 break;
             }
@@ -52,13 +54,15 @@ function handleRotateObjectSelection(x, y, e) {
     
     for (let i = shapes.length - 1; i >= 0; i--) {
         if (isPointInShape(shapes[i], x, y)) {
-            if (rotateObjectsToRotate.has(i)) {
-                rotateObjectsToRotate.delete(i);
+            // PHASE 1D: Use UUID
+            const shapeUuid = shapes[i].uuid;
+            if (rotateObjectsToRotate.has(shapeUuid)) {
+                rotateObjectsToRotate.delete(shapeUuid);
                 if (rotateObjectsToRotate.size === 0) {
                     updateHelpBar('Step 1/3: Select objects to rotate');
                 }
             } else {
-                rotateObjectsToRotate.add(i);
+                rotateObjectsToRotate.add(shapeUuid);
                 objectWasSelected = true;
                 rotateStep = 1;
                 updateHelpBar(`Step 2/3: Click center point for rotating ${rotateObjectsToRotate.size} object(s)`);
@@ -104,9 +108,12 @@ function handleRotateAngleSelection(x, y, e) {
     
     saveState(`Rotate ${rotateObjectsToRotate.size} object(s)`);
     
-    for (const index of rotateObjectsToRotate) {
-        const shape = shapes[index];
-        rotateShape(shape, rotateBasePoint.x, rotateBasePoint.y, rotationAngle);
+    // PHASE 1D: Iterate by UUID
+    for (const uuid of rotateObjectsToRotate) {
+        const shape = getShapeById(uuid);
+        if (shape) {
+            rotateShape(shape, rotateBasePoint.x, rotateBasePoint.y, rotationAngle);
+        }
     }
     
     selectedShapes = new Set(rotateObjectsToRotate);
