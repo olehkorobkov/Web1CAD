@@ -48,7 +48,12 @@ function updateViewportCache() {
         if (typeof getVisibleShapesOptimized === 'function') {
             // Get all shape indices for culling check
             const allIndices = Array.from({length: shapes.length}, (_, i) => i);
-            viewportCache.visibleShapes = getVisibleShapesOptimized(allIndices, viewportCache.bounds);
+            // PHASE 2B: Filter by layer visibility first (faster than checking bounds for all)
+            let indicesToCull = allIndices;
+            if (typeof filterShapesByLayerVisibility === 'function') {
+                indicesToCull = filterShapesByLayerVisibility(allIndices);
+            }
+            viewportCache.visibleShapes = getVisibleShapesOptimized(indicesToCull, viewportCache.bounds);
             renderingStats.culledShapes = shapes.length - viewportCache.visibleShapes.size;
         } else {
             // Fallback to original method if optimization not available
