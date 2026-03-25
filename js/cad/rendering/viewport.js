@@ -44,13 +44,22 @@ function updateViewportCache() {
         renderingStats.totalShapes = shapes.length;
         renderingStats.culledShapes = 0;
 
-        shapes.forEach((shape, index) => {
-            if (isShapeInViewport(shape, viewportCache.bounds)) {
-                viewportCache.visibleShapes.add(index);
-            } else {
-                renderingStats.culledShapes++;
-            }
-        });
+        // PHASE 2A: Use cached bounds for faster viewport culling
+        if (typeof getVisibleShapesOptimized === 'function') {
+            // Get all shape indices for culling check
+            const allIndices = Array.from({length: shapes.length}, (_, i) => i);
+            viewportCache.visibleShapes = getVisibleShapesOptimized(allIndices, viewportCache.bounds);
+            renderingStats.culledShapes = shapes.length - viewportCache.visibleShapes.size;
+        } else {
+            // Fallback to original method if optimization not available
+            shapes.forEach((shape, index) => {
+                if (isShapeInViewport(shape, viewportCache.bounds)) {
+                    viewportCache.visibleShapes.add(index);
+                } else {
+                    renderingStats.culledShapes++;
+                }
+            });
+        }
 
         renderingStats.visibleShapes = viewportCache.visibleShapes.size;
         renderingStats.lastCullTime = performance.now() - startTime;
