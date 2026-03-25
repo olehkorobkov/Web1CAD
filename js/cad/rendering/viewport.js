@@ -46,10 +46,10 @@ function updateViewportCache() {
 
         // PHASE 3: Try QuadTree first, fall back to grid
         let useQuadTree = false;
-        if (typeof findShapesNearPointQuadTree === 'function' && typeof globalQuadTree !== 'undefined') {
+        if (typeof findShapesNearPointQuadTree === 'function' && globalQuadTree !== null) {
             try {
                 // Initialize QuadTree with all shapes
-                if (globalQuadTree.isDirty || globalQuadTree.root.getStats().objectCount !== shapes.length) {
+                if (globalQuadTree && (globalQuadTree.isDirty || globalQuadTree.root.getStats().objectCount !== shapes.length)) {
                     initializeQuadTree();
                 }
                 

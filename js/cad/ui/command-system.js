@@ -557,10 +557,10 @@ function handleSelectMode(x, y, e) {
     let shapesToCheck = shapes;
     let usedQuadTree = false;
     
-    if (typeof findShapesNearPointQuadTree === 'function' && typeof globalQuadTree !== 'undefined') {
+    if (typeof findShapesNearPointQuadTree === 'function' && globalQuadTree !== null) {
         try {
             // Initialize QuadTree if needed
-            if (globalQuadTree.isDirty || globalQuadTree.root.getStats().objectCount !== shapes.length) {
+            if (globalQuadTree && (globalQuadTree.isDirty || globalQuadTree.root.getStats().objectCount !== shapes.length)) {
                 initializeQuadTree();
             }
             
