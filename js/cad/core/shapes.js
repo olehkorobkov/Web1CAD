@@ -151,6 +151,7 @@ function copySelected() {
 
 /**
  * Paste copied shapes at specified location
+ * PHASE 1E: Updated to use UUID-based selection
  * @param {number} x - X coordinate for paste location
  * @param {number} y - Y coordinate for paste location
  */
@@ -201,7 +202,9 @@ function pasteShapes(x, y) {
         selectedShapes.clear();
     }
     
-    // Paste and select the new shapes
+    // PHASE 1E: Paste and select the new shapes by UUID
+    const pastedUuids = [];
+    
     window.copiedShapes.forEach(shape => {
         const newShape = typeof safeDeepCopy === 'function'
             ? safeDeepCopy(shape, {}, 'pasted shape')
@@ -214,6 +217,13 @@ function pasteShapes(x, y) {
             }
             return;
         }
+        
+        // PHASE 1E: Generate NEW UUID for the pasted copy (not reuse original)
+        if (!generateShapeUUID) {
+            console.error('generateShapeUUID function not available');
+            return;
+        }
+        newShape.uuid = generateShapeUUID();
         
         // Apply offset to position the copied shape at cursor
         if (newShape.type === 'line') {
@@ -247,11 +257,14 @@ function pasteShapes(x, y) {
         
         if (typeof shapes !== 'undefined') {
             shapes.push(newShape);
-            if (typeof selectedShapes !== 'undefined') {
-                selectedShapes.add(shapes.length - 1);
-            }
+            pastedUuids.push(newShape.uuid);  // PHASE 1E: Track by UUID instead of index
         }
     });
+    
+    // PHASE 1E: Select by UUIDs
+    if (typeof selectedShapes !== 'undefined') {
+        selectedShapes = new Set(pastedUuids);
+    }
     
     if (typeof addToHistory === 'function') {
         addToHistory(`Pasted ${window.copiedShapes.length} object(s)`);

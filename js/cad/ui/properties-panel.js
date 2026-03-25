@@ -424,13 +424,22 @@ function updatePropertiesPanel() {
         return;
     }
     if (selectedShapes.size === 1) {
-        const shapeIndex = Array.from(selectedShapes)[0];
-        const shape = shapes[shapeIndex];
-        content.innerHTML = generateSingleObjectProperties(shape, shapeIndex);
+        // PHASE 1E: Get shape by UUID instead of array index
+        const shapeUuid = Array.from(selectedShapes)[0];
+        const shape = getShapeById(shapeUuid);
+        if (!shape) {
+            content.innerHTML = '<div class="no-selection">Shape not found</div>';
+            return;
+        }
+        content.innerHTML = generateSingleObjectProperties(shape, shapeUuid);
         updateLineweightSelectorForSelection(shape);
     } else {
+        // PHASE 1E: Get multiple shapes by UUID
+        const selectedObjects = Array.from(selectedShapes)
+            .map(uuid => getShapeById(uuid))
+            .filter(shape => shape !== null); // Remove null entries if shape not found
+        
         content.innerHTML = generateMultipleObjectProperties();
-        const selectedObjects = Array.from(selectedShapes).map(i => shapes[i]);
         updateLineweightSelectorForSelection(selectedObjects);
     }
 }
