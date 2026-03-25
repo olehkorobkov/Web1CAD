@@ -1035,11 +1035,13 @@ canvas.addEventListener('mouseup', (e) => {
                         break;
                     }
                     
-                    if (e.shiftKey && selectedShapes.has(i)) {
+                    // PHASE 1F: Use UUID instead of array index
+                    const shapeUuid = shapes[i].uuid;
+                    if (e.shiftKey && selectedShapes.has(shapeUuid)) {
                         // If shift is held and object is already selected, deselect it
-                        selectedShapes.delete(i);
+                        selectedShapes.delete(shapeUuid);
                     } else {
-                        selectedShapes.add(i);
+                        selectedShapes.add(shapeUuid);
                     }
                     found = true;
                     // Shape selected
@@ -1075,10 +1077,12 @@ canvas.addEventListener('mouseup', (e) => {
                         continue; // Skip locked shapes
                     }
                     
-                    if (e.shiftKey && selectedShapes.has(i)) {
-                        selectedShapes.delete(i);
+                    // PHASE 1F: Use UUID instead of array index
+                    const shapeUuid = shape.uuid;
+                    if (e.shiftKey && selectedShapes.has(shapeUuid)) {
+                        selectedShapes.delete(shapeUuid);
                     } else {
-                        selectedShapes.add(i);
+                        selectedShapes.add(shapeUuid);
                         selectedCount++;
                     }
                 }
