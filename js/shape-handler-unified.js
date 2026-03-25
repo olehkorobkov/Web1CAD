@@ -1323,24 +1323,42 @@ class ShapeHandler {
     }
 
     hitTestHatch(shape, x, y, tolerance = 5) {
-        // Hatch hit test - check if point is within hatch boundary or outline
-        // Hatch has x1, y1, x2, y2 defining the rectangle area
-        if (!shape || shape.type !== 'hatch') {
+        // Hatch hit test - check if point is near any of the hatch lines
+        // Hatch consists of an array of lines in shape.points (each line has 2 points)
+        if (!shape || shape.type !== 'hatch' || !shape.points || shape.points.length < 2) {
             return false;
         }
         
-        // Check if point is near the outline of the hatch rectangle
-        const minX = Math.min(shape.x1, shape.x2);
-        const maxX = Math.max(shape.x1, shape.x2);
-        const minY = Math.min(shape.y1, shape.y2);
-        const maxY = Math.max(shape.y1, shape.y2);
+        // Check distance to any line segment in the hatch
+        for (let i = 0; i < shape.points.length; i += 2) {
+            const p1 = shape.points[i];
+            const p2 = shape.points[i + 1];
+            
+            if (!p1 || !p2) continue;
+            
+            // Calculate distance from point to line segment
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const lengthSquared = dx * dx + dy * dy;
+            
+            if (lengthSquared === 0) {
+                // Line is actually a point
+                const dist = Math.sqrt((x - p1.x) ** 2 + (y - p1.y) ** 2);
+                if (dist <= tolerance) return true;
+            } else {
+                // Calculate perpendicular distance from point to line segment
+                let t = ((x - p1.x) * dx + (y - p1.y) * dy) / lengthSquared;
+                t = Math.max(0, Math.min(1, t));
+                
+                const closestX = p1.x + t * dx;
+                const closestY = p1.y + t * dy;
+                const dist = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
+                
+                if (dist <= tolerance) return true;
+            }
+        }
         
-        // Check if point is within or near the rectangle bounds
-        const px = Math.max(minX, Math.min(x, maxX));
-        const py = Math.max(minY, Math.min(y, maxY));
-        const distToRect = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
-        
-        return distToRect <= tolerance;
+        return false;
     }
 
     moveCircle(shape, dx, dy) {
