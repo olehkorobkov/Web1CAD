@@ -374,6 +374,10 @@ function moveShape(shape, dx, dy) {
             shape.cx += dx;
             shape.cy += dy;
             break;
+        case 'rectangle':
+            shape.x += dx;
+            shape.y += dy;
+            break;
         case 'point':
         case 'text':
             shape.x += dx;
