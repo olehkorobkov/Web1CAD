@@ -192,8 +192,8 @@
                         <div class="pdf-section">
                             <h4>🔄 Orientation</h4>
                             <div class="pdf-radio-group">
-                                <label><input type="radio" name="pdfOrientation" value="portrait" checked onchange="updatePdfPreview()"> 📄 Portrait</label>
-                                <label><input type="radio" name="pdfOrientation" value="landscape" onchange="updatePdfPreview()"> 📄 Landscape</label>
+                                <label><input type="radio" id="pdfOrientationPortrait" name="pdfOrientation" value="portrait" checked onchange="updatePdfPreview()"> 📄 Portrait</label>
+                                <label><input type="radio" id="pdfOrientationLandscape" name="pdfOrientation" value="landscape" onchange="updatePdfPreview()"> 📄 Landscape</label>
                             </div>
                         </div>
                         
@@ -201,8 +201,8 @@
                         <div class="pdf-section">
                             <h4>📏 Scale</h4>
                             <div class="pdf-radio-group">
-                                <label><input type="radio" name="pdfScale" value="fit" checked onchange="updatePdfPreview()"> 🔧 Fit to page</label>
-                                <label><input type="radio" name="pdfScale" value="custom" onchange="updatePdfPreview()"> ⚙️ Custom scale</label>
+                                <label><input type="radio" id="pdfScaleFit" name="pdfScale" value="fit" checked onchange="updatePdfPreview()"> 🔧 Fit to page</label>
+                                <label><input type="radio" id="pdfScaleCustom" name="pdfScale" value="custom" onchange="updatePdfPreview()"> ⚙️ Custom scale</label>
                             </div>
                             <div id="pdfCustomScale" class="pdf-custom-scale" style="display: none;">
                                 <input type="number" id="pdfScaleValue" name="pdfScale" value="1" step="0.1" min="0.1" max="100" onchange="updatePdfPreview()">
