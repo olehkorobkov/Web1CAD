@@ -102,6 +102,7 @@ class ShapeHandler {
             hatch: {
                 draw: this.drawHatch.bind(this),
                 enhancedRender: this.enhancedRenderHatch.bind(this),
+                hitTest: this.hitTestHatch.bind(this),
                 rotate: this.rotateHatch.bind(this),
                 scale: this.scaleHatch.bind(this),
                 mirror: this.mirrorHatch.bind(this)
@@ -1319,6 +1320,27 @@ class ShapeHandler {
     hitTestSpline(shape, x, y, tolerance = 5) {
         // For spline, use the same logic as polyline since spline consists of connected points
         return this.hitTestPolyline(shape, x, y, tolerance);
+    }
+
+    hitTestHatch(shape, x, y, tolerance = 5) {
+        // Hatch hit test - check if point is within hatch boundary or outline
+        // Hatch has x1, y1, x2, y2 defining the rectangle area
+        if (!shape || shape.type !== 'hatch') {
+            return false;
+        }
+        
+        // Check if point is near the outline of the hatch rectangle
+        const minX = Math.min(shape.x1, shape.x2);
+        const maxX = Math.max(shape.x1, shape.x2);
+        const minY = Math.min(shape.y1, shape.y2);
+        const maxY = Math.max(shape.y1, shape.y2);
+        
+        // Check if point is within or near the rectangle bounds
+        const px = Math.max(minX, Math.min(x, maxX));
+        const py = Math.max(minY, Math.min(y, maxY));
+        const distToRect = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
+        
+        return distToRect <= tolerance;
     }
 
     moveCircle(shape, dx, dy) {
