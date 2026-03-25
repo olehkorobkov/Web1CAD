@@ -707,113 +707,14 @@ class OptimizedRenderer {
     }
 }
 
-// Simple QuadTree for spatial indexing
-class QuadTree {
-    constructor(x, y, width, height, maxObjects = 10, maxLevels = 5, level = 0) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.maxObjects = maxObjects;
-        this.maxLevels = maxLevels;
-        this.level = level;
-        
-        this.objects = [];
-        this.nodes = [];
-    }
-
-    clear() {
-        this.objects = [];
-        for (const node of this.nodes) {
-            if (node) node.clear();
-        }
-        this.nodes = [];
-    }
-
-    insert(rect) {
-        if (this.nodes.length > 0) {
-            const index = this.getIndex(rect);
-            if (index !== -1) {
-                this.nodes[index].insert(rect);
-                return;
-            }
-        }
-
-        this.objects.push(rect);
-
-        if (this.objects.length > this.maxObjects && this.level < this.maxLevels) {
-            if (this.nodes.length === 0) {
-                this.split();
-            }
-
-            let i = 0;
-            while (i < this.objects.length) {
-                const index = this.getIndex(this.objects[i]);
-                if (index !== -1) {
-                    this.nodes[index].insert(this.objects.splice(i, 1)[0]);
-                } else {
-                    i++;
-                }
-            }
-        }
-    }
-
-    retrieve(rect) {
-        const returnObjects = [...this.objects];
-        
-        if (this.nodes.length > 0) {
-            const index = this.getIndex(rect);
-            if (index !== -1) {
-                returnObjects.push(...this.nodes[index].retrieve(rect));
-            } else {
-                for (const node of this.nodes) {
-                    returnObjects.push(...node.retrieve(rect));
-                }
-            }
-        }
-        
-        return returnObjects;
-    }
-
-    getIndex(rect) {
-        const verticalMidpoint = this.x + this.width / 2;
-        const horizontalMidpoint = this.y + this.height / 2;
-        
-        const topQuadrant = rect.y < horizontalMidpoint && rect.y + rect.height < horizontalMidpoint;
-        const bottomQuadrant = rect.y > horizontalMidpoint;
-        
-        if (rect.x < verticalMidpoint && rect.x + rect.width < verticalMidpoint) {
-            if (topQuadrant) return 1;
-            else if (bottomQuadrant) return 2;
-        } else if (rect.x > verticalMidpoint) {
-            if (topQuadrant) return 0;
-            else if (bottomQuadrant) return 3;
-        }
-        
-        return -1;
-    }
-
-    split() {
-        const subWidth = this.width / 2;
-        const subHeight = this.height / 2;
-        const x = this.x;
-        const y = this.y;
-        
-        this.nodes[0] = new QuadTree(x + subWidth, y, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
-        this.nodes[1] = new QuadTree(x, y, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
-        this.nodes[2] = new QuadTree(x, y + subHeight, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
-        this.nodes[3] = new QuadTree(x + subWidth, y + subHeight, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
-    }
-}
-
-// Export
+// Export (QuadTree now in quadtree.js - using new optimized implementation)
 if (typeof window !== 'undefined') {
     window.OptimizedRenderer = OptimizedRenderer;
-    window.QuadTree = QuadTree;
+    // QuadTree exported from quadtree.js instead
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { OptimizedRenderer, QuadTree };
+    module.exports = { OptimizedRenderer };
 }
 /*
  * Unified Event System - Web1CAD Optimization
