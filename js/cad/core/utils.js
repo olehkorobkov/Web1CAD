@@ -6,13 +6,11 @@ function safeParseFloat(value, defaultValue = 0, paramName = 'number') {
         
         const parsed = parseFloat(value);
         if (isNaN(parsed) || !isFinite(parsed)) {
-            console.warn(`Invalid ${paramName}: "${value}", using default: ${defaultValue}`);
             return defaultValue;
         }
         
         return parsed;
     } catch (error) {
-        console.error(`Parse error for ${paramName}:`, error);
         return defaultValue;
     }
 }
@@ -20,13 +18,11 @@ function safeParseFloat(value, defaultValue = 0, paramName = 'number') {
 function safeParseJSON(jsonString, defaultValue = null, context = 'JSON') {
     try {
         if (!jsonString || typeof jsonString !== 'string') {
-            console.warn(`Invalid ${context} input, using default`);
             return defaultValue;
         }
         
         return JSON.parse(jsonString);
     } catch (error) {
-        console.error(`${context} parse error:`, error.message);
         addToHistory(`${context} parse error: ${error.message}`, 'error');
         return defaultValue;
     }
@@ -40,7 +36,6 @@ function safeStringify(obj, defaultValue = '{}', context = 'Object') {
         
         return JSON.stringify(obj);
     } catch (error) {
-        console.error(`${context} stringify error:`, error.message);
         addToHistory(`${context} stringify error: ${error.message}`, 'error');
         return defaultValue;
     }
@@ -59,7 +54,6 @@ function safeDeepCopy(obj, defaultValue = null, context = 'Object') {
         
         return safeParseJSON(jsonString, defaultValue, context + ' copy');
     } catch (error) {
-        console.error(`Deep copy error for ${context}:`, error.message);
         return defaultValue;
     }
 }

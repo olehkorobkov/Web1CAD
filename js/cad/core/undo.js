@@ -12,7 +12,6 @@ function saveState(operationName = 'Unknown Operation') {
     };
     
     if (!Array.isArray(state.shapes) || !Array.isArray(state.layers)) {
-        console.error('Failed to create valid state for undo/redo');
         return;
     }
     
@@ -43,7 +42,6 @@ function undo() {
     if (Array.isArray(currentState.shapes) && Array.isArray(currentState.layers)) {
         redoStack.push(currentState);
     } else {
-        console.error('Failed to save current state for redo');
         addToHistory('Warning: Could not save current state for redo', 'warning');
     }
     
@@ -58,12 +56,10 @@ function undo() {
             currentLayer = previousState.currentLayer || '0';
             operationName = previousState.operationName || 'Unknown Operation';
         } else {
-            console.error('No previous state available for undo');
             addToHistory('Error: No state to undo', 'error');
             return false;
         }
     } catch (error) {
-        console.error('Error during undo operation:', error);
         addToHistory('Error: Failed to undo - ' + error.message, 'error');
         return false;
     }
@@ -94,7 +90,6 @@ function redo() {
     if (Array.isArray(currentState.shapes) && Array.isArray(currentState.layers)) {
         undoStack.push(currentState);
     } else {
-        console.error('Failed to save current state for undo');
         addToHistory('Warning: Could not save current state for undo', 'warning');
     }
     
@@ -109,12 +104,10 @@ function redo() {
             currentLayer = nextState.currentLayer || '0';
             operationName = nextState.operationName || 'Unknown Operation';
         } else {
-            console.error('No next state available for redo');
             addToHistory('Error: No state to redo', 'error');
             return false;
         }
     } catch (error) {
-        console.error('Error during redo operation:', error);
         addToHistory('Error: Failed to redo - ' + error.message, 'error');
         return false;
     }

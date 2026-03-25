@@ -22,19 +22,11 @@ function updatePerformanceStats() {
         performanceStats.fps = Math.round(1000 / performanceStats.frameTime);
 
         if (performanceStats.fps < 30 && shapes.length > 1000) {
-            console.warn(`Performance warning: ${performanceStats.fps} FPS with ${shapes.length} objects`);
+            // Performance warning: low FPS with many objects
         }
     }
 }
 
 window.showViewportStats = function() {
-    console.group('🔍 Viewport Optimization Statistics');
-    console.log(`Total shapes: ${shapes.length}`);
-    console.log(`Visible shapes: ${viewportCache.visibleShapes.size}`);
-    console.log(`Culled shapes: ${shapes.length - viewportCache.visibleShapes.size}`);
-    console.log(`Culling efficiency: ${((shapes.length - viewportCache.visibleShapes.size) / shapes.length * 100).toFixed(1)}%`);
-    console.log(`Last cull time: ${renderingStats.lastCullTime.toFixed(2)}ms`);
-    console.log(`Current FPS: ${performanceStats.fps}`);
-    console.log(`Viewport bounds:`, viewportCache.bounds);
-    console.groupEnd();
+    // Viewport optimization statistics
 };

@@ -48,7 +48,6 @@ class MemoryManager {
     getPooledObject(type, initializer = null) {
         const pool = this.objectPools[type];
         if (!pool) {
-            console.warn(`Unknown pool type: ${type}`);
             return initializer ? initializer() : {};
         }
         
@@ -215,8 +214,6 @@ class MemoryManager {
     }
 
     performAutoCleanup() {
-        console.log('🧹 Memory cleanup started...');
-        
         // 1. Clear expired cache entries
         if (window.optimizedRenderer?.layerCache) {
             window.optimizedRenderer.layerCache.cleanExpired?.();
@@ -238,8 +235,6 @@ class MemoryManager {
         
         // 6. Update stats
         this.updateMemoryStats();
-        
-        console.log('✅ Memory cleanup completed', this.memoryStats);
     }
 
     cleanupPools() {
@@ -405,7 +400,7 @@ class PerformanceMonitor {
             
             // Log slow operations
             if (duration > 16) { // 60 FPS threshold
-                console.warn(`Slow operation: ${name} took ${duration.toFixed(2)}ms`);
+                // Slow operation detected
             }
             
             return result;
@@ -1368,8 +1363,6 @@ class Web1CADOptimizer {
     async initialize() {
         if (this.isInitialized) return;
         
-        console.log('🚀 Initializing Web1CAD optimizations...');
-        
         try {
             // 1. Initialize Memory Manager (first, because others depend on it)
             this.initializeMemoryManager();
@@ -1390,11 +1383,7 @@ class Web1CADOptimizer {
             this.setupPerformanceMonitoring();
             
             this.isInitialized = true;
-            console.log('✅ Web1CAD optimizations initialized successfully!');
-            console.log('📊 Active optimizations:', this.optimizations);
-            
         } catch (error) {
-            console.error('❌ Failed to initialize optimizations:', error);
         }
     }
 
@@ -1408,7 +1397,6 @@ class Web1CADOptimizer {
             window.memoryManager.wrapShapeOperations();
             
             this.optimizations.memoryManager = true;
-            console.log('✅ Memory Manager initialized');
         }
     }
 
@@ -1417,7 +1405,6 @@ class Web1CADOptimizer {
         if (window.ShapeHandler) {
             window.shapeHandler = new window.ShapeHandler();
             this.optimizations.unifiedShapeHandler = true;
-            console.log('✅ Unified Shape Handler initialized');
         }
     }
 
@@ -1430,7 +1417,6 @@ class Web1CADOptimizer {
             this.wrapRedrawFunction();
             
             this.optimizations.optimizedRenderer = true;
-            console.log('✅ Optimized Renderer initialized');
         }
     }
 
@@ -1450,8 +1436,6 @@ class Web1CADOptimizer {
                     originalRedraw();
                 }
             };
-            
-            console.log('✅ Redraw function wrapped with optimization');
         }
     }
 
@@ -1460,7 +1444,6 @@ class Web1CADOptimizer {
         if (window.UnifiedEventSystem && window.canvas) {
             window.unifiedEventSystem = new window.UnifiedEventSystem(window.canvas);
             this.optimizations.unifiedEventSystem = true;
-            console.log('✅ Unified Event System initialized');
         }
     }
 
@@ -1596,11 +1579,11 @@ class Web1CADOptimizer {
                 const memoryReport = window.memoryManager?.getMemoryReport();
                 
                 if (Object.keys(metrics).length > 0) {
-                    console.log('📊 Performance metrics:', metrics);
+                    // Performance metrics available
                 }
                 
                 if (memoryReport) {
-                    console.log('🧠 Memory report:', memoryReport);
+                    // Memory report available
                 }
             }, 60000); // Every minute
         }
@@ -1608,8 +1591,6 @@ class Web1CADOptimizer {
 
     // === DIAGNOSTIC TOOLS ===
     runDiagnostics() {
-        console.log('🔍 Running Web1CAD diagnostics...');
-        
         const diagnostics = {
             optimizations: this.optimizations,
             shapeCount: window.shapes?.length || 0,
@@ -1656,13 +1637,10 @@ class Web1CADOptimizer {
 
     disableOptimization(name) {
         // Implementation for disabling specific optimizations
-        console.warn(`Disabling ${name} optimization not fully implemented`);
     }
 
     // === BENCHMARKING ===
     async runBenchmark() {
-        console.log('🏃 Running performance benchmark...');
-        
         const results = {};
         
         // Benchmark shape creation
@@ -1696,8 +1674,6 @@ class Web1CADOptimizer {
             }
         }
         results.hitTesting = performance.now() - hitTestStart;
-        
-        console.log('📈 Benchmark results:', results);
         return results;
     }
 }

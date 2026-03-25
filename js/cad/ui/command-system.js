@@ -83,7 +83,6 @@ function drawCopyPreview(ctx, shape, dx, dy, zoom) {
     // Create a temporary copied shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'copy preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create preview shape');
         ctx.restore();
         return;
     }
@@ -154,7 +153,7 @@ function drawCopyPreview(ctx, shape, dx, dy, zoom) {
             }
             break;
         default:
-            console.warn('Unknown shape type for copy preview:', previewShape.type);
+            // Unknown shape type for preview
     }
     
     ctx.restore();
@@ -166,7 +165,6 @@ function drawRotatePreview(ctx, shape, centerX, centerY, angle, zoom) {
     // Create a temporary rotated shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'rotate preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create rotate preview shape');
         ctx.restore();
         return;
     }
@@ -274,7 +272,7 @@ function drawRotatePreview(ctx, shape, centerX, centerY, angle, zoom) {
             }
             break;
         default:
-            console.warn('Unknown shape type for copy preview:', previewShape.type);
+            // Unknown shape type for rotate preview
     }
     
     ctx.restore();
@@ -286,7 +284,6 @@ function drawScalePreview(ctx, shape, centerX, centerY, factor, zoom) {
     // Create a temporary scaled shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'scale preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create scale preview shape');
         ctx.restore();
         return;
     }
@@ -391,7 +388,7 @@ function drawScalePreview(ctx, shape, centerX, centerY, factor, zoom) {
             }
             break;
         default:
-            console.warn('Unknown shape type for scale preview:', previewShape.type);
+            // Unknown shape type for scale preview
     }
     
     ctx.restore();
@@ -403,7 +400,6 @@ function drawMovePreview(ctx, shape, dx, dy, zoom) {
     // Create a temporary moved shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'move preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create move preview shape');
         ctx.restore();
         return;
     }
@@ -1983,7 +1979,7 @@ function deleteSelectedShapes() {
     if (typeof deleteSelected === 'function') {
         deleteSelected();
     } else {
-        console.error('deleteSelected function not available');
+        // deleteSelected function not available
     }
 }
 
@@ -2118,8 +2114,6 @@ function createFinalPolygon() {
     };
     
     addShape(newShape);
-    
-    console.log('Polygon created as polyline:', newShape);
     
     const radiusTypeText = polygonRadiusType === 'inscribed' ? 'inscribed' : 'circumscribed';
     addToHistory(`Polygon created: ${polygonSides} sides, radius ${polygonRadius.toFixed(2)} (${radiusTypeText}), angle ${(polygonAngle * 180 / Math.PI).toFixed(1)}deg`);
