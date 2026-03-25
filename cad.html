@@ -56,7 +56,7 @@
         <!-- Integrated Layer Panel -->
         <div class="layer-panel-integrated" title="Current Layer">
             <div class="layer-current">
-                <select id="layerSelect" class="layer-select" onchange="setCurrentLayer(this.value)" title="Select current layer">
+                <select id="layerSelect" name="layer" class="layer-select" onchange="setCurrentLayer(this.value)" title="Select current layer">
                     <option value="0">0</option>
                 </select>
             </div>
@@ -71,7 +71,7 @@
         <!-- Integrated Color Panel -->
         <div class="color-panel-integrated">
             <div class="color-current">
-                <select id="colorSelect" class="color-select" onchange="setCurrentColor(this.value)">
+                <select id="colorSelect" name="color" class="color-select" onchange="setCurrentColor(this.value)">
                     <option value="byLayer" style="background: #333; color: #fff;" selected>ByLayer</option>
                     <option value="#ffffff" style="background: #ffffff; color: #000;">White</option>
                     <option value="#000000" style="background: #000000; color: #fff;">Black</option>
@@ -93,12 +93,12 @@
         </div>
         
         <!-- Hidden color picker for palette -->
-        <input type="color" id="colorPicker" value="#ffffff" style="display: none;" onchange="setCurrentColor(this.value)">
+        <input type="color" id="colorPicker" name="colorPicker" value="#ffffff" style="display: none;" onchange="setCurrentColor(this.value)">
         
         <!-- Integrated Lineweight Panel -->
         <div class="lineweight-panel-integrated">
             <div class="lineweight-current">
-                <select id="lineweightSelect" class="lineweight-select" onchange="setCurrentLineweight(this.value)">
+                <select id="lineweightSelect" name="lineweight" class="lineweight-select" onchange="setCurrentLineweight(this.value)">
                     <option value="byLayer" selected>ByLayer</option>
                     <option value="0.00">0.00 mm</option>
                     <option value="0.05">0.05 mm</option>
@@ -123,7 +123,7 @@
         <!-- Integrated Line Type Panel -->
         <div class="linetype-panel-integrated">
             <div class="linetype-current">
-                <select id="linetypeSelect" class="linetype-select" onchange="setCurrentLinetype(this.value)">
+                <select id="linetypeSelect" name="linetype" class="linetype-select" onchange="setCurrentLinetype(this.value)">
                     <option value="byLayer" selected>ByLayer</option>
                     <option value="continuous">Continuous</option>
                     <option value="dashed">Dashed</option>
@@ -147,7 +147,7 @@
 
         <!-- Text input overlay -->
         <div id="textInputOverlay" class="text-input-overlay" style="display: none;">
-            <input type="text" id="textInput" placeholder="Enter text">
+            <input type="text" id="textInput" name="text" placeholder="Enter text">
             <div class="text-input-buttons">
                 <button onclick="confirmText()">OK</button>
                 <button onclick="cancelText()">Cancel</button>
@@ -156,11 +156,11 @@
 
         <!-- Length input overlay -->
         <div id="lengthInput" class="length-input-overlay" style="display: none;">
-            <input type="number" id="lengthValue" placeholder="Length..." step="0.01" min="0">
+            <input type="number" id="lengthValue" name="length" placeholder="Length..." step="0.01" min="0">
         </div>
         
         <!-- Hidden file input for loading -->
-        <input type="file" id="fileInput" accept=".wcd,.json" style="display: none;" />
+        <input type="file" id="fileInput" name="file" accept=".wcd,.json" style="display: none;" />
 
         <!-- Area to PDF Export Dialog -->
         <div id="pdfExportDialog" class="pdf-export-dialog" style="display: none;">
@@ -176,7 +176,7 @@
                         <!-- Paper Size Section -->
                         <div class="pdf-section">
                             <h4>📄 Paper Size</h4>
-                            <select id="pdfPaperSize" onchange="updatePdfPreview()">
+                            <select id="pdfPaperSize" name="paperSize" onchange="updatePdfPreview()">
                                 <option value="a4" selected>A4 (210 × 297 mm)</option>
                                 <option value="a3">A3 (297 × 420 mm)</option>
                                 <option value="a2">A2 (420 × 594 mm)</option>
@@ -205,7 +205,7 @@
                                 <label><input type="radio" name="pdfScale" value="custom" onchange="updatePdfPreview()"> ⚙️ Custom scale</label>
                             </div>
                             <div id="pdfCustomScale" class="pdf-custom-scale" style="display: none;">
-                                <input type="number" id="pdfScaleValue" value="1" step="0.1" min="0.1" max="100" onchange="updatePdfPreview()">
+                                <input type="number" id="pdfScaleValue" name="pdfScale" value="1" step="0.1" min="0.1" max="100" onchange="updatePdfPreview()">
                                 <span>: 1</span>
                             </div>
                         </div>
@@ -213,7 +213,7 @@
                         <!-- Quality Section -->
                         <div class="pdf-section">
                             <h4>🎨 Quality</h4>
-                            <select id="pdfQuality" onchange="updatePdfPreview()">
+                            <select id="pdfQuality" name="pdfQuality" onchange="updatePdfPreview()">
                                 <option value="1">📝 Draft (1x)</option>
                                 <option value="2">📄 Standard (2x)</option>
                                 <option value="4" selected>🎯 High (4x)</option>
@@ -225,10 +225,10 @@
                         <div class="pdf-section">
                             <h4>📐 Margins (mm)</h4>
                             <div class="pdf-margins">
-                                <label>⬆️ Top: <input type="number" id="pdfMarginTop" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
-                                <label>⬇️ Bottom: <input type="number" id="pdfMarginBottom" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
-                                <label>⬅️ Left: <input type="number" id="pdfMarginLeft" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
-                                <label>➡️ Right: <input type="number" id="pdfMarginRight" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
+                                <label>⬆️ Top: <input type="number" id="pdfMarginTop" name="marginTop" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
+                                <label>⬇️ Bottom: <input type="number" id="pdfMarginBottom" name="marginBottom" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
+                                <label>⬅️ Left: <input type="number" id="pdfMarginLeft" name="marginLeft" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
+                                <label>➡️ Right: <input type="number" id="pdfMarginRight" name="marginRight" value="10" min="0" max="50" onchange="updatePdfPreview()"></label>
                             </div>
                         </div>
                         
@@ -236,8 +236,8 @@
                         <div class="pdf-section">
                             <h4>⚙️ Options</h4>
                             <div class="pdf-checkboxes">
-                                <label><input type="checkbox" id="pdfShowBorder" checked onchange="updatePdfPreview()"> 🔲 Show page border</label>
-                                <label><input type="checkbox" id="pdfShowTitle" checked onchange="updatePdfPreview()"> 📝 Include title</label>
+                                <label><input type="checkbox" id="pdfShowBorder" name="showBorder" checked onchange="updatePdfPreview()"> 🔲 Show page border</label>
+                                <label><input type="checkbox" id="pdfShowTitle" name="showTitle" checked onchange="updatePdfPreview()"> 📝 Include title</label>
                                 <label><input type="checkbox" id="pdfShowDate" checked onchange="updatePdfPreview()"> 📅 Include date</label>
                                 <label><input type="checkbox" id="pdfShowCoords" checked onchange="updatePdfPreview()"> 📍 Show coordinates</label>
                                 <label><input type="checkbox" id="pdfShowScale" checked onchange="updatePdfPreview()"> 📏 Show scale info</label>
