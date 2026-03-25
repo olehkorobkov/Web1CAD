@@ -553,10 +553,19 @@ function handleSelectMode(x, y, e) {
     // Check if we're clicking on an object first (before clearing selection)
     let clickedShape = null;
     
-    // Find object under cursor (search from top to bottom)
-    for (let i = shapes.length - 1; i >= 0; i--) {
-        if (isPointInShape(shapes[i], x, y)) {
-            clickedShape = shapes[i];
+    // PHASE 2C: Use spatial index for faster shape picking
+    let shapesToCheck = shapes;
+    if (typeof findShapesNearPoint === 'function') {
+        // Use spatial index for fast picking within tolerance
+        const pickedIndices = findShapesNearPoint(x, y, 5);
+        shapesToCheck = pickedIndices.map(i => shapes[i]).filter(s => s);
+    }
+    
+    // Find object under cursor (search from top to bottom - last added first)
+    for (let i = shapesToCheck.length - 1; i >= 0; i--) {
+        const shape = shapesToCheck[i];
+        if (isPointInShape(shape, x, y)) {
+            clickedShape = shape;
             break;
         }
     }
