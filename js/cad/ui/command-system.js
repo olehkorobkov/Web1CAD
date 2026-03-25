@@ -552,31 +552,32 @@ function handleMirrorMode(x, y, e) {
 function handleSelectMode(x, y, e) {
     // Check if we're clicking on an object first (before clearing selection)
     let clickedShape = null;
-    let clickedIndex = -1;
     
     // Find object under cursor (search from top to bottom)
     for (let i = shapes.length - 1; i >= 0; i--) {
         if (isPointInShape(shapes[i], x, y)) {
             clickedShape = shapes[i];
-            clickedIndex = i;
             break;
         }
     }
     
     if (clickedShape) {
+        // PHASE 1F: Use UUID instead of array index
+        const shapeUuid = clickedShape.uuid;
+        
         // Clicked on an object
         if (e.shiftKey) {
             // Multi-select mode - toggle selection of clicked object
-            if (selectedShapes.has(clickedIndex)) {
-                selectedShapes.delete(clickedIndex);
+            if (selectedShapes.has(shapeUuid)) {
+                selectedShapes.delete(shapeUuid);
                 addToHistory(`Object deselected`);
             } else {
-                selectedShapes.add(clickedIndex);
+                selectedShapes.add(shapeUuid);
                 addToHistory(`Object added to selection`);
             }
         } else {
             // Single-select mode
-            if (selectedShapes.has(clickedIndex) && selectedShapes.size === 1) {
+            if (selectedShapes.has(shapeUuid) && selectedShapes.size === 1) {
                 // Already selected - keep selection (use Move command to move objects)
                 addToHistory(`Object already selected. Use Move command to relocate.`);
                 return;
@@ -585,7 +586,7 @@ function handleSelectMode(x, y, e) {
                 if (typeof clearSelection === 'function') {
                     clearSelection();
                 }
-                selectedShapes.add(clickedIndex);
+                selectedShapes.add(shapeUuid);
                 addToHistory(`Object selected: ${clickedShape.type}`);
             }
         }
