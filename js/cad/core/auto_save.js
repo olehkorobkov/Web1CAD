@@ -26,9 +26,8 @@ function performAutoSave() {
                 view: { zoom: zoom, offsetX: offsetX, offsetY: offsetY }
             };
             localStorage.setItem('web1cad_autosave', JSON.stringify(data));
-            console.log('Auto-save completed');
         } catch (error) {
-            console.warn('Auto-save failed:', error.message);
+            // Auto-save failed
         }
     }
 }
@@ -53,7 +52,7 @@ function checkForAutoSave() {
             }
         }
     } catch (error) {
-        console.warn('Failed to check auto-save:', error.message);
+        // Failed to check auto-save
     }
     return false;
 }
@@ -77,7 +76,6 @@ function restoreFromAutoSave(data) {
         addToHistory(`Restored from auto-save: ${shapes.length} objects`);
         localStorage.removeItem('web1cad_autosave');
     } catch (error) {
-        console.error('Failed to restore from auto-save:', error);
         addToHistory('Failed to restore auto-save', 'error');
     }
 }

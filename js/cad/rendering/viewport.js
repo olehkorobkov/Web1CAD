@@ -44,13 +44,48 @@ function updateViewportCache() {
         renderingStats.totalShapes = shapes.length;
         renderingStats.culledShapes = 0;
 
-        shapes.forEach((shape, index) => {
-            if (isShapeInViewport(shape, viewportCache.bounds)) {
-                viewportCache.visibleShapes.add(index);
-            } else {
-                renderingStats.culledShapes++;
+        // PHASE 3: Try QuadTree first, fall back to grid
+        let useQuadTree = false;
+        if (typeof findShapesNearPointQuadTree === 'function' && globalQuadTree !== null) {
+            try {
+                // Initialize QuadTree with all shapes
+                if (globalQuadTree && (globalQuadTree.isDirty || globalQuadTree.root.getStats().objectCount !== shapes.length)) {
+                    initializeQuadTree();
+                }
+                
+                // Query QuadTree for visible shapes
+                const qtResults = queryQuadTree(viewportCache.bounds);
+                if (qtResults && qtResults.size > 0) {
+                    viewportCache.visibleShapes = qtResults;
+                    renderingStats.culledShapes = shapes.length - viewportCache.visibleShapes.size;
+                    useQuadTree = true;
+                }
+            } catch (err) {
+                console.warn('QuadTree query failed, falling back to grid:', err);
             }
-        });
+        }
+
+        // PHASE 2A/2B: Fallback to grid system if QuadTree not available or failed
+        if (!useQuadTree && typeof getVisibleShapesOptimized === 'function') {
+            // Get all shape indices for culling check
+            const allIndices = Array.from({length: shapes.length}, (_, i) => i);
+            // PHASE 2B: Filter by layer visibility first (faster than checking bounds for all)
+            let indicesToCull = allIndices;
+            if (typeof filterShapesByLayerVisibility === 'function') {
+                indicesToCull = filterShapesByLayerVisibility(allIndices);
+            }
+            viewportCache.visibleShapes = getVisibleShapesOptimized(indicesToCull, viewportCache.bounds);
+            renderingStats.culledShapes = shapes.length - viewportCache.visibleShapes.size;
+        } else if (!useQuadTree) {
+            // Ultimate fallback to original method
+            shapes.forEach((shape, index) => {
+                if (isShapeInViewport(shape, viewportCache.bounds)) {
+                    viewportCache.visibleShapes.add(index);
+                } else {
+                    renderingStats.culledShapes++;
+                }
+            });
+        }
 
         renderingStats.visibleShapes = viewportCache.visibleShapes.size;
         renderingStats.lastCullTime = performance.now() - startTime;

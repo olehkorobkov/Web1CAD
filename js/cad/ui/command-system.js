@@ -83,7 +83,6 @@ function drawCopyPreview(ctx, shape, dx, dy, zoom) {
     // Create a temporary copied shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'copy preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create preview shape');
         ctx.restore();
         return;
     }
@@ -154,7 +153,7 @@ function drawCopyPreview(ctx, shape, dx, dy, zoom) {
             }
             break;
         default:
-            console.warn('Unknown shape type for copy preview:', previewShape.type);
+            // Unknown shape type for preview
     }
     
     ctx.restore();
@@ -166,7 +165,6 @@ function drawRotatePreview(ctx, shape, centerX, centerY, angle, zoom) {
     // Create a temporary rotated shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'rotate preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create rotate preview shape');
         ctx.restore();
         return;
     }
@@ -274,7 +272,7 @@ function drawRotatePreview(ctx, shape, centerX, centerY, angle, zoom) {
             }
             break;
         default:
-            console.warn('Unknown shape type for copy preview:', previewShape.type);
+            // Unknown shape type for rotate preview
     }
     
     ctx.restore();
@@ -286,7 +284,6 @@ function drawScalePreview(ctx, shape, centerX, centerY, factor, zoom) {
     // Create a temporary scaled shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'scale preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create scale preview shape');
         ctx.restore();
         return;
     }
@@ -391,7 +388,7 @@ function drawScalePreview(ctx, shape, centerX, centerY, factor, zoom) {
             }
             break;
         default:
-            console.warn('Unknown shape type for scale preview:', previewShape.type);
+            // Unknown shape type for scale preview
     }
     
     ctx.restore();
@@ -403,7 +400,6 @@ function drawMovePreview(ctx, shape, dx, dy, zoom) {
     // Create a temporary moved shape for preview using safe method
     const previewShape = safeDeepCopy(shape, {}, 'move preview shape');
     if (!previewShape || typeof previewShape !== 'object') {
-        console.error('Failed to create move preview shape');
         ctx.restore();
         return;
     }
@@ -556,31 +552,60 @@ function handleMirrorMode(x, y, e) {
 function handleSelectMode(x, y, e) {
     // Check if we're clicking on an object first (before clearing selection)
     let clickedShape = null;
-    let clickedIndex = -1;
     
-    // Find object under cursor (search from top to bottom)
-    for (let i = shapes.length - 1; i >= 0; i--) {
-        if (isPointInShape(shapes[i], x, y)) {
-            clickedShape = shapes[i];
-            clickedIndex = i;
+    // PHASE 3: Try QuadTree first, fall back to spatial index
+    let shapesToCheck = shapes;
+    let usedQuadTree = false;
+    
+    if (typeof findShapesNearPointQuadTree === 'function' && globalQuadTree !== null) {
+        try {
+            // Initialize QuadTree if needed
+            if (globalQuadTree && (globalQuadTree.isDirty || globalQuadTree.root.getStats().objectCount !== shapes.length)) {
+                initializeQuadTree();
+            }
+            
+            // Use QuadTree for fast picking
+            const pickedIndices = findShapesNearPointQuadTree(x, y, 5);
+            shapesToCheck = pickedIndices.map(i => shapes[i]).filter(s => s);
+            usedQuadTree = true;
+        } catch (err) {
+            console.warn('QuadTree picking failed, falling back to spatial index:', err);
+        }
+    }
+    
+    // PHASE 2C: Fallback to spatial index if QuadTree not available
+    if (!usedQuadTree && typeof findShapesNearPoint === 'function') {
+        // Use spatial index for fast picking within tolerance
+        const pickedIndices = findShapesNearPoint(x, y, 5);
+        shapesToCheck = pickedIndices.map(i => shapes[i]).filter(s => s);
+    }
+    
+    // Find object under cursor (search from top to bottom - last added first)
+    for (let i = shapesToCheck.length - 1; i >= 0; i--) {
+        const shape = shapesToCheck[i];
+        if (isPointInShape(shape, x, y)) {
+            clickedShape = shape;
             break;
         }
     }
     
     if (clickedShape) {
+        // PHASE 1F: Use UUID instead of array index
+        const shapeUuid = clickedShape.uuid;
+        
         // Clicked on an object
         if (e.shiftKey) {
             // Multi-select mode - toggle selection of clicked object
-            if (selectedShapes.has(clickedIndex)) {
-                selectedShapes.delete(clickedIndex);
+            if (selectedShapes.has(shapeUuid)) {
+                selectedShapes.delete(shapeUuid);
                 addToHistory(`Object deselected`);
             } else {
-                selectedShapes.add(clickedIndex);
+                selectedShapes.add(shapeUuid);
                 addToHistory(`Object added to selection`);
             }
         } else {
             // Single-select mode
-            if (selectedShapes.has(clickedIndex) && selectedShapes.size === 1) {
+            if (selectedShapes.has(shapeUuid) && selectedShapes.size === 1) {
                 // Already selected - keep selection (use Move command to move objects)
                 addToHistory(`Object already selected. Use Move command to relocate.`);
                 return;
@@ -589,7 +614,7 @@ function handleSelectMode(x, y, e) {
                 if (typeof clearSelection === 'function') {
                     clearSelection();
                 }
-                selectedShapes.add(clickedIndex);
+                selectedShapes.add(shapeUuid);
                 addToHistory(`Object selected: ${clickedShape.type}`);
             }
         }
@@ -1983,7 +2008,7 @@ function deleteSelectedShapes() {
     if (typeof deleteSelected === 'function') {
         deleteSelected();
     } else {
-        console.error('deleteSelected function not available');
+        // deleteSelected function not available
     }
 }
 
@@ -1994,26 +2019,48 @@ function explodeSelectedShapes() {
         addToHistory('No objects selected to explode', 'error');
         return;
     }
-    saveState(`Explode ${selectedShapes.size} object(s)`);
-    const indices = Array.from(selectedShapes).sort((a, b) => b - a);
+    
+    const explodeCount = selectedShapes.size;
+    saveState(`Explode ${explodeCount} object(s)`);
+    
+    // PHASE 1B: Collect UUIDs of shapes to explode (since we'll be modifying the array)
+    const uuidsToExplode = Array.from(selectedShapes);
+    
     let totalParts = 0;
     const newSelected = new Set();
-    for (const idx of indices) {
-        if (idx < 0 || idx >= shapes.length) continue;
-        const shape = shapes[idx];
+    
+    // Process each shape to explode
+    for (const uuid of uuidsToExplode) {
+        // Find shape by UUID
+        const shapeIndex = getShapeIndexById(uuid);
+        if (shapeIndex < 0) continue;
+        
+        const shape = shapes[shapeIndex];
         const parts = explodeShape(shape);
+        
         if (parts && parts.length) {
-            shapes.splice(idx, 1);
+            // Remove original shape at index
+            shapes.splice(shapeIndex, 1);
+            
+            // Add exploded parts and track them
             for (const part of parts) {
+                // PHASE 1B: Ensure new parts have UUIDs
+                if (!part.uuid) {
+                    part.uuid = generateShapeUUID();
+                }
                 shapes.push(part);
-                newSelected.add(shapes.length - 1);
+                newSelected.add(part.uuid);  // Select by UUID, not index
             }
             totalParts += parts.length;
         }
     }
+    
     selectedShapes = newSelected;
-    addToHistory(`Exploded ${indices.length} object(s) into ${totalParts} part(s)`);
-    redraw();
+    addToHistory(`Exploded ${explodeCount} object(s) into ${totalParts} part(s)`);
+    
+    if (typeof redraw === 'function') {
+        redraw();
+    }
 }
 
 // Prompt for new layer name
@@ -2118,8 +2165,6 @@ function createFinalPolygon() {
     };
     
     addShape(newShape);
-    
-    console.log('Polygon created as polyline:', newShape);
     
     const radiusTypeText = polygonRadiusType === 'inscribed' ? 'inscribed' : 'circumscribed';
     addToHistory(`Polygon created: ${polygonSides} sides, radius ${polygonRadius.toFixed(2)} (${radiusTypeText}), angle ${(polygonAngle * 180 / Math.PI).toFixed(1)}deg`);

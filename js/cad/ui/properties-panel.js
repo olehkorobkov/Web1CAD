@@ -4,7 +4,7 @@ const cursorCoordsElement = document.getElementById('cursorCoords');
 const helpBarElement = document.getElementById('helpBar');
 
 if (!commandInput || !commandHistoryElement || !cursorCoordsElement || !helpBarElement) {
-    console.error('Critical DOM elements missing. Please check HTML structure.');
+    // Critical DOM elements missing
 }
 
 let statusTimeout = null;
@@ -51,34 +51,25 @@ document.addEventListener('DOMContentLoaded', function() {
     canvas.height = canvas.clientHeight;
 
     if (typeof window.renderDiagnostics !== 'undefined' && typeof window.renderStabilizer !== 'undefined') {
-        console.log('Render stabilization system initialized');
         window.debugRender = function() {
-            console.log('Current render state:');
-            console.log('- Zoom level:', zoom);
-            console.log('- Offset:', offsetX, offsetY);
-            console.log('- Objects count:', shapes.length);
-            console.log('- Canvas size:', canvas.width, canvas.height);
+            // Current render state for debugging
             if (typeof diagnoseRendering === 'function') {
                 const diagnostics = diagnoseRendering();
-                console.log('- Diagnostics:', diagnostics);
             }
         };
         window.testRenderStability = function() {
-            console.log('Testing render stability at extreme zoom levels...');
             const originalZoom = zoom;
             const testZooms = [0.001, 0.1, 1, 10, 100, 1000, 10000];
             testZooms.forEach(testZoom => {
                 zoom = testZoom;
                 try {
                     _redraw();
-                    console.log(`✓ Zoom ${testZoom}: OK`);
                 } catch (e) {
-                    console.error(`✗ Zoom ${testZoom}: ${e.message}`);
+                    // Zoom test failed
                 }
             });
             zoom = originalZoom;
             _redraw();
-            console.log('Stability test completed, zoom restored to:', zoom);
         };
         let lastDiagnosticTime = 0;
         setInterval(() => {
@@ -87,20 +78,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (now - lastDiagnosticTime > 5000) {
                     const diagnostics = diagnoseRendering();
                     if (diagnostics.criticalIssues && diagnostics.criticalIssues.length > 0) {
-                        console.warn('Critical rendering issues detected:', diagnostics.criticalIssues);
                         if (typeof fixRenderingIssues === 'function') {
                             fixRenderingIssues();
                         }
                     }
                     if (diagnostics.performance && diagnostics.performance.averageFrameTime > 33) {
-                        console.warn(`Poor performance detected: ${diagnostics.performance.averageFrameTime.toFixed(2)}ms/frame`);
+                        // Poor performance detected
                     }
                     lastDiagnosticTime = now;
                 }
             }
         }, 5000);
-    } else {
-        console.warn('Render stabilization system not available - some zoom issues may occur');
     }
 
     const topToolbar = document.querySelector('.top-toolbar');
@@ -436,13 +424,22 @@ function updatePropertiesPanel() {
         return;
     }
     if (selectedShapes.size === 1) {
-        const shapeIndex = Array.from(selectedShapes)[0];
-        const shape = shapes[shapeIndex];
-        content.innerHTML = generateSingleObjectProperties(shape, shapeIndex);
+        // PHASE 1E: Get shape by UUID instead of array index
+        const shapeUuid = Array.from(selectedShapes)[0];
+        const shape = getShapeById(shapeUuid);
+        if (!shape) {
+            content.innerHTML = '<div class="no-selection">Shape not found</div>';
+            return;
+        }
+        content.innerHTML = generateSingleObjectProperties(shape, shapeUuid);
         updateLineweightSelectorForSelection(shape);
     } else {
+        // PHASE 1E: Get multiple shapes by UUID
+        const selectedObjects = Array.from(selectedShapes)
+            .map(uuid => getShapeById(uuid))
+            .filter(shape => shape !== null); // Remove null entries if shape not found
+        
         content.innerHTML = generateMultipleObjectProperties();
-        const selectedObjects = Array.from(selectedShapes).map(i => shapes[i]);
         updateLineweightSelectorForSelection(selectedObjects);
     }
 }

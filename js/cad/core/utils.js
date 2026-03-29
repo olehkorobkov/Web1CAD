@@ -6,13 +6,11 @@ function safeParseFloat(value, defaultValue = 0, paramName = 'number') {
         
         const parsed = parseFloat(value);
         if (isNaN(parsed) || !isFinite(parsed)) {
-            console.warn(`Invalid ${paramName}: "${value}", using default: ${defaultValue}`);
             return defaultValue;
         }
         
         return parsed;
     } catch (error) {
-        console.error(`Parse error for ${paramName}:`, error);
         return defaultValue;
     }
 }
@@ -20,13 +18,11 @@ function safeParseFloat(value, defaultValue = 0, paramName = 'number') {
 function safeParseJSON(jsonString, defaultValue = null, context = 'JSON') {
     try {
         if (!jsonString || typeof jsonString !== 'string') {
-            console.warn(`Invalid ${context} input, using default`);
             return defaultValue;
         }
         
         return JSON.parse(jsonString);
     } catch (error) {
-        console.error(`${context} parse error:`, error.message);
         addToHistory(`${context} parse error: ${error.message}`, 'error');
         return defaultValue;
     }
@@ -40,7 +36,6 @@ function safeStringify(obj, defaultValue = '{}', context = 'Object') {
         
         return JSON.stringify(obj);
     } catch (error) {
-        console.error(`${context} stringify error:`, error.message);
         addToHistory(`${context} stringify error: ${error.message}`, 'error');
         return defaultValue;
     }
@@ -59,7 +54,6 @@ function safeDeepCopy(obj, defaultValue = null, context = 'Object') {
         
         return safeParseJSON(jsonString, defaultValue, context + ' copy');
     } catch (error) {
-        console.error(`Deep copy error for ${context}:`, error.message);
         return defaultValue;
     }
 }
@@ -70,4 +64,42 @@ function convertMmToPixels(mm) {
     const mmPerInch = 25.4;
     const pixels = (mm / mmPerInch) * dpi;
     return Math.max(1, pixels); 
+}
+
+// ============================================================================
+// SHAPE LOOKUP UTILITIES - PHASE 1A: UUID-based shape identification
+// ============================================================================
+
+/**
+ * Find a shape by its UUID
+ * Time complexity: O(n) - for repeated lookups, use createShapeLookupMap() instead
+ * @param {string} uuid - The UUID of the shape to find
+ * @returns {Object|null} The shape object or null if not found
+ */
+function getShapeById(uuid) {
+    if (typeof shapes === 'undefined') return null;
+    if (!uuid) return null;
+    return shapes.find(shape => shape && shape.uuid === uuid) || null;
+}
+
+/**
+ * Find the array index of a shape by its UUID
+ * @param {string} uuid - The UUID of the shape
+ * @returns {number} The array index or -1 if not found
+ */
+function getShapeIndexById(uuid) {
+    if (typeof shapes === 'undefined') return -1;
+    if (!uuid) return -1;
+    return shapes.findIndex(shape => shape && shape.uuid === uuid);
+}
+
+/**
+ * Create a fast lookup Map for shape UUIDs
+ * Recommended for operations that access many shapes
+ * Time complexity: O(n) to create, O(1) per lookup
+ * @returns {Map<string, Object>} Map of uuid -> shape
+ */
+function createShapeLookupMap() {
+    if (typeof shapes === 'undefined') return new Map();
+    return new Map(shapes.filter(s => s && s.uuid).map(shape => [shape.uuid, shape]));
 }

@@ -21,8 +21,10 @@ function handleScaleObjectSelection(x, y, e) {
     if (e.shiftKey) {
     } else {
         let clickedOnSelected = false;
-        for (const i of scaleObjectsToScale) {
-            if (isPointInShape(shapes[i], x, y)) {
+        // PHASE 1D: Check by UUID
+        for (const uuid of scaleObjectsToScale) {
+            const shape = getShapeById(uuid);
+            if (shape && isPointInShape(shape, x, y)) {
                 clickedOnSelected = true;
                 break;
             }
@@ -36,13 +38,15 @@ function handleScaleObjectSelection(x, y, e) {
     
     for (let i = shapes.length - 1; i >= 0; i--) {
         if (isPointInShape(shapes[i], x, y)) {
-            if (scaleObjectsToScale.has(i)) {
-                scaleObjectsToScale.delete(i);
+            // PHASE 1D: Use UUID
+            const shapeUuid = shapes[i].uuid;
+            if (scaleObjectsToScale.has(shapeUuid)) {
+                scaleObjectsToScale.delete(shapeUuid);
                 if (scaleObjectsToScale.size === 0) {
                     updateHelpBar('Step 1/3: Select objects to scale');
                 }
             } else {
-                scaleObjectsToScale.add(i);
+                scaleObjectsToScale.add(shapeUuid);
                 objectWasSelected = true;
                 scaleStep = 1;
                 updateHelpBar(`Step 2/3: Click base point for scaling ${scaleObjectsToScale.size} object(s)`);
@@ -87,9 +91,23 @@ function handleScaleFactorSelection(x, y, e) {
     
     saveState(`Scale ${scaleObjectsToScale.size} object(s)`);
     
-    for (const index of scaleObjectsToScale) {
-        const shape = shapes[index];
-        scaleShape(shape, scaleBasePoint.x, scaleBasePoint.y, scaleFactor);
+    // PHASE 1D: Iterate by UUID
+    for (const uuid of scaleObjectsToScale) {
+        const shape = getShapeById(uuid);
+        if (shape) {
+            scaleShape(shape, scaleBasePoint.x, scaleBasePoint.y, scaleFactor);
+        }
+    }
+    
+    // Invalidate caches after shapes are modified (PHASE 2/3)
+    if (typeof invalidateShapeSetBoundsCache === 'function') {
+        invalidateShapeSetBoundsCache(scaleObjectsToScale);
+    }
+    if (typeof invalidateQuadTree === 'function') {
+        invalidateQuadTree();
+    }
+    if (typeof invalidateViewportCache === 'function') {
+        invalidateViewportCache();
     }
     
     selectedShapes = new Set(scaleObjectsToScale);
