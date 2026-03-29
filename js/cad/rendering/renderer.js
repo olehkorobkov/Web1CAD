@@ -1026,40 +1026,90 @@ canvas.addEventListener('mouseup', (e) => {
         if (dragDistance < 5 / zoom) {
             // Single click - select single object
             let found = false;
-            for (let i = 0; i < shapes.length; i++) {
-                const shape = shapes[i];
-                if (isPointInShape(shape, x, y)) {
-                    // Check if shape can be modified (layer not locked)
-                    if (typeof canModifyShape === 'function' && !canModifyShape(shape)) {
-                        addToHistory(`Cannot select object on locked layer: ${shape.layer || 'Default'}`);
-                        found = true; // Still consider it found, but don't select
+            
+            // OPTIMIZATION 3.4.5: Use quadtree for O(log n) click detection instead of O(n)
+            const nearbyIndices = typeof findShapesNearPointQuadTree === 'function' 
+                ? findShapesNearPointQuadTree(x, y, 5) 
+                : [];
+
+            if (nearbyIndices.length > 0) {
+                // Fast path: Query nearby shapes from quadtree first
+                for (const i of nearbyIndices) {
+                    const shape = shapes[i];
+                    if (isPointInShape(shape, x, y)) {
+                        // Check if shape can be modified (layer not locked)
+                        if (typeof canModifyShape === 'function' && !canModifyShape(shape)) {
+                            addToHistory(`Cannot select object on locked layer: ${shape.layer || 'Default'}`);
+                            found = true;
+                            break;
+                        }
+                        
+                        // PHASE 1F: Use UUID instead of array index
+                        const shapeUuid = shapes[i].uuid;
+                        if (e.shiftKey && selectedShapes.has(shapeUuid)) {
+                            selectedShapes.delete(shapeUuid);
+                        } else {
+                            selectedShapes.add(shapeUuid);
+                        }
+                        found = true;
                         break;
                     }
-                    
-                    // PHASE 1F: Use UUID instead of array index
-                    const shapeUuid = shapes[i].uuid;
-                    if (e.shiftKey && selectedShapes.has(shapeUuid)) {
-                        // If shift is held and object is already selected, deselect it
-                        selectedShapes.delete(shapeUuid);
-                    } else {
-                        selectedShapes.add(shapeUuid);
+                }
+            } else {
+                // Fallback: Linear search if quadtree not available or no results
+                for (let i = 0; i < shapes.length; i++) {
+                    const shape = shapes[i];
+                    if (isPointInShape(shape, x, y)) {
+                        if (typeof canModifyShape === 'function' && !canModifyShape(shape)) {
+                            addToHistory(`Cannot select object on locked layer: ${shape.layer || 'Default'}`);
+                            found = true;
+                            break;
+                        }
+                        
+                        const shapeUuid = shapes[i].uuid;
+                        if (e.shiftKey && selectedShapes.has(shapeUuid)) {
+                            selectedShapes.delete(shapeUuid);
+                        } else {
+                            selectedShapes.add(shapeUuid);
+                        }
+                        found = true;
+                        break;
                     }
-                    found = true;
-                    // Shape selected
-                    break;
                 }
             }
+            
             if (!found) {
                 // No shape found at cursor position
             }
             addToHistory(`Selected ${selectedShapes.size} objects`);
         } else {
-            // Drag - window selection
+            // Drag - window selection (OPTIMIZATION: Use quadtree)
             const isWindowSelection = e.offsetX > selectionWindowStartX;
             let selectedCount = 0;
             let lockedCount = 0;
 
-            for (let i = 0; i < shapes.length; i++) {
+            // OPTIMIZATION 3.4.5: Use quadtree to filter candidates
+            const windowBounds = {
+                minX: Math.min(startX, x),
+                maxX: Math.max(startX, x),
+                minY: Math.min(startY, y),
+                maxY: Math.max(startY, y)
+            };
+
+            let candidateIndices = [];
+            if (typeof queryQuadTree === 'function' && globalQuadTree) {
+                // Fast path: Get candidates from quadtree
+                const results = queryQuadTree(windowBounds);
+                candidateIndices = results.size > 0 
+                    ? Array.from(results) 
+                    : Array.from({length: shapes.length}, (_, i) => i); // Fallback
+            } else {
+                // Fallback: Use all shapes
+                candidateIndices = Array.from({length: shapes.length}, (_, i) => i);
+            }
+
+            // Now check actual containment only for candidates
+            for (const i of candidateIndices) {
                 const shape = shapes[i];
                 let shouldSelect = false;
 
