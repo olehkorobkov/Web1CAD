@@ -30,10 +30,8 @@ function handleMoveObjectSelection(x, y, e) {
     if (e.shiftKey) {
     } else {
         let clickedOnSelected = false;
-        // PHASE 1D: Check by UUID
-        for (const uuid of moveObjectsToMove) {
-            const shape = getShapeById(uuid);
-            if (shape && isPointInShape(shape, x, y)) {
+        for (const i of moveObjectsToMove) {
+            if (isPointInShape(shapes[i], x, y)) {
                 clickedOnSelected = true;
                 break;
             }
@@ -47,15 +45,13 @@ function handleMoveObjectSelection(x, y, e) {
     
     for (let i = shapes.length - 1; i >= 0; i--) {
         if (isPointInShape(shapes[i], x, y)) {
-            // PHASE 1D: Use UUID
-            const shapeUuid = shapes[i].uuid;
-            if (moveObjectsToMove.has(shapeUuid)) {
-                moveObjectsToMove.delete(shapeUuid);
+            if (moveObjectsToMove.has(i)) {
+                moveObjectsToMove.delete(i);
                 if (moveObjectsToMove.size === 0) {
                     updateHelpBar('Step 1/3: Select objects to move');
                 }
             } else {
-                moveObjectsToMove.add(shapeUuid);
+                moveObjectsToMove.add(i);
                 objectWasSelected = true;
                 moveStep = 1;
                 updateHelpBar(`Step 2/3: Click base point for moving ${moveObjectsToMove.size} object(s)`);
@@ -90,26 +86,9 @@ function handleMoveDestinationSelection(x, y, e) {
     const dx = x - moveBasePoint.x;
     const dy = y - moveBasePoint.y;
     
-    // Save undo state before modifying shapes
-    saveState(`Move ${moveObjectsToMove.size} object(s)`);
-    
-    // PHASE 1D: Iterate by UUID
-    for (const uuid of moveObjectsToMove) {
-        const shape = getShapeById(uuid);
-        if (shape) {
-            moveShape(shape, dx, dy);
-        }
-    }
-    
-    // Invalidate caches after shapes are modified (PHASE 2/3)
-    if (typeof invalidateShapeSetBoundsCache === 'function') {
-        invalidateShapeSetBoundsCache(moveObjectsToMove);
-    }
-    if (typeof invalidateQuadTree === 'function') {
-        invalidateQuadTree();
-    }
-    if (typeof invalidateViewportCache === 'function') {
-        invalidateViewportCache();
+    for (const index of moveObjectsToMove) {
+        const shape = shapes[index];
+        moveShape(shape, dx, dy);
     }
     
     selectedShapes = new Set(moveObjectsToMove);

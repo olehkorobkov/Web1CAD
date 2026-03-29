@@ -97,16 +97,12 @@ function handleCommandInput(e) {
     }
 }
 
-// DXF import handler - only attach if element exists
-const dxfInput = document.getElementById('dxfInput');
-if (dxfInput) {
-    dxfInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            importDXF(file);
-        }
-    });
-}
+document.getElementById('dxfInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        importDXF(file);
+    }
+});
 
 function openDrawing() {
     const fileInput = document.getElementById('fileInput');

@@ -48,6 +48,7 @@ class MemoryManager {
     getPooledObject(type, initializer = null) {
         const pool = this.objectPools[type];
         if (!pool) {
+            console.warn(`Unknown pool type: ${type}`);
             return initializer ? initializer() : {};
         }
         
@@ -214,6 +215,8 @@ class MemoryManager {
     }
 
     performAutoCleanup() {
+        console.log('🧹 Memory cleanup started...');
+        
         // 1. Clear expired cache entries
         if (window.optimizedRenderer?.layerCache) {
             window.optimizedRenderer.layerCache.cleanExpired?.();
@@ -235,6 +238,8 @@ class MemoryManager {
         
         // 6. Update stats
         this.updateMemoryStats();
+        
+        console.log('✅ Memory cleanup completed', this.memoryStats);
     }
 
     cleanupPools() {
@@ -400,7 +405,7 @@ class PerformanceMonitor {
             
             // Log slow operations
             if (duration > 16) { // 60 FPS threshold
-                // Slow operation detected
+                console.warn(`Slow operation: ${name} took ${duration.toFixed(2)}ms`);
             }
             
             return result;
@@ -707,14 +712,113 @@ class OptimizedRenderer {
     }
 }
 
-// Export (QuadTree now in quadtree.js - using new optimized implementation)
+// Simple QuadTree for spatial indexing
+class QuadTree {
+    constructor(x, y, width, height, maxObjects = 10, maxLevels = 5, level = 0) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.maxObjects = maxObjects;
+        this.maxLevels = maxLevels;
+        this.level = level;
+        
+        this.objects = [];
+        this.nodes = [];
+    }
+
+    clear() {
+        this.objects = [];
+        for (const node of this.nodes) {
+            if (node) node.clear();
+        }
+        this.nodes = [];
+    }
+
+    insert(rect) {
+        if (this.nodes.length > 0) {
+            const index = this.getIndex(rect);
+            if (index !== -1) {
+                this.nodes[index].insert(rect);
+                return;
+            }
+        }
+
+        this.objects.push(rect);
+
+        if (this.objects.length > this.maxObjects && this.level < this.maxLevels) {
+            if (this.nodes.length === 0) {
+                this.split();
+            }
+
+            let i = 0;
+            while (i < this.objects.length) {
+                const index = this.getIndex(this.objects[i]);
+                if (index !== -1) {
+                    this.nodes[index].insert(this.objects.splice(i, 1)[0]);
+                } else {
+                    i++;
+                }
+            }
+        }
+    }
+
+    retrieve(rect) {
+        const returnObjects = [...this.objects];
+        
+        if (this.nodes.length > 0) {
+            const index = this.getIndex(rect);
+            if (index !== -1) {
+                returnObjects.push(...this.nodes[index].retrieve(rect));
+            } else {
+                for (const node of this.nodes) {
+                    returnObjects.push(...node.retrieve(rect));
+                }
+            }
+        }
+        
+        return returnObjects;
+    }
+
+    getIndex(rect) {
+        const verticalMidpoint = this.x + this.width / 2;
+        const horizontalMidpoint = this.y + this.height / 2;
+        
+        const topQuadrant = rect.y < horizontalMidpoint && rect.y + rect.height < horizontalMidpoint;
+        const bottomQuadrant = rect.y > horizontalMidpoint;
+        
+        if (rect.x < verticalMidpoint && rect.x + rect.width < verticalMidpoint) {
+            if (topQuadrant) return 1;
+            else if (bottomQuadrant) return 2;
+        } else if (rect.x > verticalMidpoint) {
+            if (topQuadrant) return 0;
+            else if (bottomQuadrant) return 3;
+        }
+        
+        return -1;
+    }
+
+    split() {
+        const subWidth = this.width / 2;
+        const subHeight = this.height / 2;
+        const x = this.x;
+        const y = this.y;
+        
+        this.nodes[0] = new QuadTree(x + subWidth, y, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
+        this.nodes[1] = new QuadTree(x, y, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
+        this.nodes[2] = new QuadTree(x, y + subHeight, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
+        this.nodes[3] = new QuadTree(x + subWidth, y + subHeight, subWidth, subHeight, this.maxObjects, this.maxLevels, this.level + 1);
+    }
+}
+
+// Export
 if (typeof window !== 'undefined') {
     window.OptimizedRenderer = OptimizedRenderer;
-    // QuadTree exported from quadtree.js instead
+    window.QuadTree = QuadTree;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { OptimizedRenderer };
+    module.exports = { OptimizedRenderer, QuadTree };
 }
 /*
  * Unified Event System - Web1CAD Optimization
@@ -1264,6 +1368,8 @@ class Web1CADOptimizer {
     async initialize() {
         if (this.isInitialized) return;
         
+        console.log('🚀 Initializing Web1CAD optimizations...');
+        
         try {
             // 1. Initialize Memory Manager (first, because others depend on it)
             this.initializeMemoryManager();
@@ -1284,7 +1390,11 @@ class Web1CADOptimizer {
             this.setupPerformanceMonitoring();
             
             this.isInitialized = true;
+            console.log('✅ Web1CAD optimizations initialized successfully!');
+            console.log('📊 Active optimizations:', this.optimizations);
+            
         } catch (error) {
+            console.error('❌ Failed to initialize optimizations:', error);
         }
     }
 
@@ -1298,6 +1408,7 @@ class Web1CADOptimizer {
             window.memoryManager.wrapShapeOperations();
             
             this.optimizations.memoryManager = true;
+            console.log('✅ Memory Manager initialized');
         }
     }
 
@@ -1306,6 +1417,7 @@ class Web1CADOptimizer {
         if (window.ShapeHandler) {
             window.shapeHandler = new window.ShapeHandler();
             this.optimizations.unifiedShapeHandler = true;
+            console.log('✅ Unified Shape Handler initialized');
         }
     }
 
@@ -1318,6 +1430,7 @@ class Web1CADOptimizer {
             this.wrapRedrawFunction();
             
             this.optimizations.optimizedRenderer = true;
+            console.log('✅ Optimized Renderer initialized');
         }
     }
 
@@ -1337,6 +1450,8 @@ class Web1CADOptimizer {
                     originalRedraw();
                 }
             };
+            
+            console.log('✅ Redraw function wrapped with optimization');
         }
     }
 
@@ -1345,6 +1460,7 @@ class Web1CADOptimizer {
         if (window.UnifiedEventSystem && window.canvas) {
             window.unifiedEventSystem = new window.UnifiedEventSystem(window.canvas);
             this.optimizations.unifiedEventSystem = true;
+            console.log('✅ Unified Event System initialized');
         }
     }
 
@@ -1480,11 +1596,11 @@ class Web1CADOptimizer {
                 const memoryReport = window.memoryManager?.getMemoryReport();
                 
                 if (Object.keys(metrics).length > 0) {
-                    // Performance metrics available
+                    console.log('📊 Performance metrics:', metrics);
                 }
                 
                 if (memoryReport) {
-                    // Memory report available
+                    console.log('🧠 Memory report:', memoryReport);
                 }
             }, 60000); // Every minute
         }
@@ -1492,6 +1608,8 @@ class Web1CADOptimizer {
 
     // === DIAGNOSTIC TOOLS ===
     runDiagnostics() {
+        console.log('🔍 Running Web1CAD diagnostics...');
+        
         const diagnostics = {
             optimizations: this.optimizations,
             shapeCount: window.shapes?.length || 0,
@@ -1538,10 +1656,13 @@ class Web1CADOptimizer {
 
     disableOptimization(name) {
         // Implementation for disabling specific optimizations
+        console.warn(`Disabling ${name} optimization not fully implemented`);
     }
 
     // === BENCHMARKING ===
     async runBenchmark() {
+        console.log('🏃 Running performance benchmark...');
+        
         const results = {};
         
         // Benchmark shape creation
@@ -1575,6 +1696,8 @@ class Web1CADOptimizer {
             }
         }
         results.hitTesting = performance.now() - hitTestStart;
+        
+        console.log('📈 Benchmark results:', results);
         return results;
     }
 }

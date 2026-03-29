@@ -102,7 +102,6 @@ class ShapeHandler {
             hatch: {
                 draw: this.drawHatch.bind(this),
                 enhancedRender: this.enhancedRenderHatch.bind(this),
-                hitTest: this.hitTestHatch.bind(this),
                 rotate: this.rotateHatch.bind(this),
                 scale: this.scaleHatch.bind(this),
                 mirror: this.mirrorHatch.bind(this)
@@ -1320,45 +1319,6 @@ class ShapeHandler {
     hitTestSpline(shape, x, y, tolerance = 5) {
         // For spline, use the same logic as polyline since spline consists of connected points
         return this.hitTestPolyline(shape, x, y, tolerance);
-    }
-
-    hitTestHatch(shape, x, y, tolerance = 5) {
-        // Hatch hit test - check if point is near any of the hatch lines
-        // Hatch consists of an array of lines in shape.points (each line has 2 points)
-        if (!shape || shape.type !== 'hatch' || !shape.points || shape.points.length < 2) {
-            return false;
-        }
-        
-        // Check distance to any line segment in the hatch
-        for (let i = 0; i < shape.points.length; i += 2) {
-            const p1 = shape.points[i];
-            const p2 = shape.points[i + 1];
-            
-            if (!p1 || !p2) continue;
-            
-            // Calculate distance from point to line segment
-            const dx = p2.x - p1.x;
-            const dy = p2.y - p1.y;
-            const lengthSquared = dx * dx + dy * dy;
-            
-            if (lengthSquared === 0) {
-                // Line is actually a point
-                const dist = Math.sqrt((x - p1.x) ** 2 + (y - p1.y) ** 2);
-                if (dist <= tolerance) return true;
-            } else {
-                // Calculate perpendicular distance from point to line segment
-                let t = ((x - p1.x) * dx + (y - p1.y) * dy) / lengthSquared;
-                t = Math.max(0, Math.min(1, t));
-                
-                const closestX = p1.x + t * dx;
-                const closestY = p1.y + t * dy;
-                const dist = Math.sqrt((x - closestX) ** 2 + (y - closestY) ** 2);
-                
-                if (dist <= tolerance) return true;
-            }
-        }
-        
-        return false;
     }
 
     moveCircle(shape, dx, dy) {

@@ -345,7 +345,7 @@ function drawShape(ctx, shape, zoom, shapeIndex) {
  */
 function renderEnhancedShape(ctx, shape, zoom, shapeIndex) {
     const isSelected = (typeof selectedShapes !== 'undefined' && selectedShapes.has) ? 
-        selectedShapes.has(shape.uuid) : false;
+        selectedShapes.has(shapeIndex) : false;
     const isMoveSelected = (typeof moveObjectsToMove !== 'undefined' && moveObjectsToMove.has) ? 
         moveObjectsToMove.has(shapeIndex) : false;
     
@@ -464,7 +464,7 @@ function renderEnhancedShape(ctx, shape, zoom, shapeIndex) {
 function renderStandardShapes(ctx, shape, zoom, shapeIndex) {
     // Handle standard CAD shapes - OPTIMIZED with Unified Shape Handler
     const isSelected = (typeof selectedShapes !== 'undefined' && selectedShapes.has) ? 
-        selectedShapes.has(shape.uuid) : false;
+        selectedShapes.has(shapeIndex) : false;
     const isMoveSelected = (typeof moveObjectsToMove !== 'undefined' && moveObjectsToMove.has) ? 
         moveObjectsToMove.has(shapeIndex) : false;
     const isHovered = false; // DISABLED: Hover highlighting removed per user request

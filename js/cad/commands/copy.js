@@ -30,10 +30,8 @@ function handleCopyObjectSelection(x, y, e) {
     if (e.shiftKey) {
     } else {
         let clickedOnSelected = false;
-        // PHASE 1D: Check if clicked on any selected shape (by UUID)
-        for (const uuid of copyObjectsToCopy) {
-            const shape = getShapeById(uuid);
-            if (shape && isPointInShape(shape, x, y)) {
+        for (const i of copyObjectsToCopy) {
+            if (isPointInShape(shapes[i], x, y)) {
                 clickedOnSelected = true;
                 break;
             }
@@ -45,18 +43,15 @@ function handleCopyObjectSelection(x, y, e) {
 
     let objectWasSelected = false;
     
-    // Find which shape was clicked (iterate from end for top-most)
     for (let i = shapes.length - 1; i >= 0; i--) {
         if (isPointInShape(shapes[i], x, y)) {
-            // PHASE 1D: Use shape.uuid instead of index
-            const shapeUuid = shapes[i].uuid;
-            if (copyObjectsToCopy.has(shapeUuid)) {
-                copyObjectsToCopy.delete(shapeUuid);
+            if (copyObjectsToCopy.has(i)) {
+                copyObjectsToCopy.delete(i);
                 if (copyObjectsToCopy.size === 0) {
                     updateHelpBar('Step 1/3: Select objects to copy');
                 }
             } else {
-                copyObjectsToCopy.add(shapeUuid);
+                copyObjectsToCopy.add(i);
                 objectWasSelected = true;
                 copyStep = 1;
                 updateHelpBar(`Step 2/3: Click base point for copying ${copyObjectsToCopy.size} object(s)`);
@@ -93,17 +88,11 @@ function handleCopyDestinationSelection(x, y, e) {
     
     saveState(`Copy ${copyObjectsToCopy.size} object(s)`);
     
-    const newShapeUuids = [];
-    // PHASE 1D: Iterate over UUIDs instead of indices
-    for (const uuid of copyObjectsToCopy) {
-        const originalShape = getShapeById(uuid);
-        if (!originalShape) continue;
-        
+    const newShapes = [];
+    for (const index of copyObjectsToCopy) {
+        const originalShape = shapes[index];
         const copiedShape = safeDeepCopy(originalShape, {}, 'copied shape'); 
         if (copiedShape && typeof copiedShape === 'object') {
-            // PHASE 1D: Generate new UUID for the copy (not reuse original)
-            copiedShape.uuid = generateShapeUUID();
-            
             moveShape(copiedShape, dx, dy); 
             
             copiedShape.layer = currentLayer;
@@ -111,26 +100,14 @@ function handleCopyDestinationSelection(x, y, e) {
             copiedShape.lineWeight = currentLineWeight;
             
             shapes.push(copiedShape);
-            newShapeUuids.push(copiedShape.uuid);  // Use UUID instead of array index
+            newShapes.push(shapes.length - 1); 
         } else {
-            console.error('Failed to copy shape with UUID:', uuid);
+            console.error('Failed to copy shape:', originalShape);
             addToHistory('Warning: Failed to copy one or more shapes', 'warning');
         }
     }
     
-    // PHASE 1D: Select copied shapes by UUID
-    selectedShapes = new Set(newShapeUuids);
-    
-    // Invalidate caches after new shapes are added (PHASE 2/3)
-    if (typeof invalidateShapeSetBoundsCache === 'function') {
-        invalidateShapeSetBoundsCache(new Set(newShapeUuids));
-    }
-    if (typeof invalidateQuadTree === 'function') {
-        invalidateQuadTree();
-    }
-    if (typeof invalidateViewportCache === 'function') {
-        invalidateViewportCache();
-    }
+    selectedShapes = new Set(newShapes);
     
     updateHelpBar('Objects copied! Returning to selection mode...');
     setTimeout(() => {

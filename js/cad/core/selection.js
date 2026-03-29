@@ -32,7 +32,6 @@ function clearSelection() {
 
 /**
  * Select all shapes in the drawing
- * PHASE 1C: Refactored to use UUID-based selection
  */
 function selectAll() {
     if (typeof shapes === 'undefined' || !shapes) {
@@ -40,8 +39,7 @@ function selectAll() {
         return;
     }
     
-    // PHASE 1C: Map shape UUIDs instead of array indices
-    selectedShapes = new Set(shapes.map(shape => shape.uuid));
+    selectedShapes = new Set(shapes.map((_, i) => i));
     
     if (typeof setStatusMessage === 'function') {
         setStatusMessage(`Selected all ${selectedShapes.size} objects`);
